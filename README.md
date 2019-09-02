@@ -3,9 +3,9 @@
 ``` python hpipeline_v2.01.py -h ```
 
 
-usage: hpipeline_v2.01.py [-h] [-i INPUT] [-I INPUTLIST] [-o OUTPUT]
-                          [-O OUTPUTLIST] [-b BASH_SCRIPT] [--hxbary] [-r R]
-                          [-d DEC]
+```usage: hpipeline_v2.01.py [-h] [-i INPUT] [-I INPUTLIST] [-o OUTPUT]```
+```                          [-O OUTPUTLIST] [-b BASH_SCRIPT] [--hxbary] [-r R]```
+```                          [-d DEC]```
 
 Example: python he_pipeline.py -i /DATA_PATH/ExpID/ -o /OUTPUT_PATH/ExpID/ --hxbary -r 83.63322083 -d 22.014461
 
