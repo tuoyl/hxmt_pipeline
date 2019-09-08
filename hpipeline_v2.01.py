@@ -5,6 +5,7 @@ HXMT pipeline, run python hpipeline_v2.01.py -h for help.
 '''
 import argparse
 import os
+import sys
 import glob
 from astropy.io import fits
 
@@ -88,17 +89,28 @@ def get_dir(product_dir, instrument="HE"):
         dir_dict= dict(zip(dir_name, dir_content))
         return dir_dict
 
+class pipelineError(Exception):
+    pass
+
 def get_rawdata(data_dir, instrument="HE"):
     #read filenames
     if instrument == "HE":
-        filename     = sorted(glob.glob(data_dir + '/HE/*HE-Evt_FFFFFF_V[1-9]*'))[-1]
-        orbitname    = sorted(glob.glob(data_dir + '/ACS/*_Orbit_*V[1-9]*'))[-1]
-        attname      = sorted(glob.glob(data_dir + '/ACS/*_Att_*V[1-9]*'))[-1]
-        hvfilename   = sorted(glob.glob(data_dir + '/HE/HXMT*HV_FFFFFF*V[1-9]*'))[-1]
-        pmfilename   = sorted(glob.glob(data_dir + '/HE/HXMT*PM_FFFFFF*V[1-9]*'))[-1]
-        deadfilename = sorted(glob.glob(data_dir + '/HE/HXMT*DTime*V[1-9]*'))[-1]
-        tempfilename = sorted(glob.glob(data_dir + '/HE/HXMT*TH*V[1-9]*'))[-1]
-        ehkfilename  = sorted(glob.glob(data_dir + '/AUX/*_EHK_*V[1-9]*'))[-1]
+        try:filename     = sorted(glob.glob(data_dir + '/HE/*HE-Evt_FFFFFF_V[1-9]*'))[-1]
+        except:print("\nERROR: Event file(Evt) not exist...\n");sys.exit()
+        try:orbitname    = sorted(glob.glob(data_dir + '/ACS/*_Orbit_*V[1-9]*'))[-1]
+        except:print("\nERROR: Orbit file(Orbit) not exist...\n");sys.exit()
+        try:attname      = sorted(glob.glob(data_dir + '/ACS/*_Att_*V[1-9]*'))[-1]
+        except:print("\nERROR: Attitude file(Att) not exist...\n");sys.exit()
+        try:hvfilename   = sorted(glob.glob(data_dir + '/HE/HXMT*HV_FFFFFF*V[1-9]*'))[-1]
+        except:print("\nERROR: High Voltage file(HV) not exist...\n");sys.exit()
+        try:pmfilename   = sorted(glob.glob(data_dir + '/HE/HXMT*PM_FFFFFF*V[1-9]*'))[-1]
+        except:print("\nERROR: Particle Monitor file(PM) not exist...\n");sys.exit()
+        try:deadfilename = sorted(glob.glob(data_dir + '/HE/HXMT*DTime*V[1-9]*'))[-1]
+        except:print("\nERROR: Dead time file(DTime) not exist...\n");sys.exit()
+        try:tempfilename = sorted(glob.glob(data_dir + '/HE/HXMT*TH*V[1-9]*'))[-1]
+        except:print("\nERROR: Temperature file(TH) not exist...\n");sys.exit()
+        try:ehkfilename  = sorted(glob.glob(data_dir + '/AUX/*_EHK_*V[1-9]*'))[-1]
+        except:print("\nERROR: House Keeping file(EHK) not exist...\n");sys.exit()
 
         rawdata_name = ["Evt", "Orbit", "Att", "HV", "PM", "DTime", "TH", "EHK"]
         rawdata_content = [filename, orbitname, attname, hvfilename, pmfilename, deadfilename, tempfilename, ehkfilename]
@@ -108,12 +120,18 @@ def get_rawdata(data_dir, instrument="HE"):
 
     elif instrument == "ME":
 
-        filename     = sorted(glob.glob(data_dir + '/ME/*ME-Evt_FFFFFF_V[1-9]*'))[-1]
-        orbitname    = sorted(glob.glob(data_dir + '/ACS/*_Orbit_*V[1-9]*'))[-1]
-        attname      = sorted(glob.glob(data_dir + '/ACS/*_Att_*V[1-9]*'))[-1]
-        tempfilename = sorted(glob.glob(data_dir + '/ME/HXMT*TH*V[1-9]*'))[-1]
-        instatname   = sorted(glob.glob(data_dir + '/ME/HXMT*InsStat*V[1-9]*'))[-1]
-        ehkfilename  = sorted(glob.glob(data_dir + '/AUX/*_EHK_*V[1-9]*'))[-1]
+        try:filename     = sorted(glob.glob(data_dir + '/ME/*ME-Evt_FFFFFF_V[1-9]*'))[-1]
+        except:print("\nERROR: Event file(Evt) not exist...\n");sys.exit()
+        try:orbitname    = sorted(glob.glob(data_dir + '/ACS/*_Orbit_*V[1-9]*'))[-1]
+        except:print("\nERROR: Orbit file(Orbit) not exist...\n");sys.exit()
+        try:attname      = sorted(glob.glob(data_dir + '/ACS/*_Att_*V[1-9]*'))[-1]
+        except:print("\nERROR: Attitude file(Att) not exist...\n");sys.exit()
+        try:tempfilename = sorted(glob.glob(data_dir + '/ME/HXMT*TH*V[1-9]*'))[-1]
+        except:print("\nERROR: Temperature file(TH) not exist...\n");sys.exit()
+        try:instatname   = sorted(glob.glob(data_dir + '/ME/HXMT*InsStat*V[1-9]*'))[-1]
+        except:print("\nERROR: Instrument Status file(InsStat) not exist...\n");sys.exit()
+        try:ehkfilename  = sorted(glob.glob(data_dir + '/AUX/*_EHK_*V[1-9]*'))[-1]
+        except:print("\nERROR: House Keeping file(EHK) not exist...\n");sys.exit()
 
         rawdata_name = ["Evt", "Orbit", "Att", "TH", "EHK", "InsStat"]
         rawdata_content = [filename, orbitname, attname, tempfilename, ehkfilename, instatname]
@@ -123,12 +141,18 @@ def get_rawdata(data_dir, instrument="HE"):
 
     elif instrument == "LE":
 
-        filename     = sorted(glob.glob(data_dir + '/LE/*LE-Evt_FFFFFF_V[1-9]*'))[-1]
-        orbitname    = sorted(glob.glob(data_dir + '/ACS/*_Orbit_*V[1-9]*'))[-1]
-        attname      = sorted(glob.glob(data_dir + '/ACS/*_Att_*V[1-9]*'))[-1]
-        tempfilename = sorted(glob.glob(data_dir + '/LE/HXMT*TH*V[1-9]*'))[-1]
-        instatname   = sorted(glob.glob(data_dir + '/LE/HXMT*InsStat*V[1-9]*'))[-1]
-        ehkfilename  = sorted(glob.glob(data_dir + '/AUX/*_EHK_*V[1-9]*'))[-1]
+        try:filename     = sorted(glob.glob(data_dir + '/LE/*LE-Evt_FFFFFF_V[1-9]*'))[-1]
+        except:print("\nERROR: Event file(Evt) not exist...\n");sys.exit()
+        try:orbitname    = sorted(glob.glob(data_dir + '/ACS/*_Orbit_*V[1-9]*'))[-1]
+        except:print("\nERROR: Orbit file(Orbit) not exist...\n");sys.exit()
+        try:attname      = sorted(glob.glob(data_dir + '/ACS/*_Att_*V[1-9]*'))[-1]
+        except:print("\nERROR: Attitude file(Att) not exist...\n");sys.exit()
+        try:tempfilename = sorted(glob.glob(data_dir + '/LE/HXMT*TH*V[1-9]*'))[-1]
+        except:print("\nERROR: Temperature file(TH) not exist...\n");sys.exit()
+        try:instatname   = sorted(glob.glob(data_dir + '/LE/HXMT*InsStat*V[1-9]*'))[-1]
+        except:print("\nERROR: Instrument Status file(InsStat) not exist...\n");sys.exit()
+        try:ehkfilename  = sorted(glob.glob(data_dir + '/AUX/*_EHK_*V[1-9]*'))[-1]
+        except:print("\nERROR: House Keeping file(EHK) not exist...\n");sys.exit()
 
         rawdata_name = ["Evt", "Orbit", "Att", "TH", "EHK", "InsStat"]
         rawdata_content = [filename, orbitname, attname, tempfilename, ehkfilename, instatname]
@@ -573,7 +597,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.inputlist:
-        #TODO: list input is not finish yes...
         inputfile = open(args.inputlist)
         outputfile= open(args.outputlist)
         bashfile  = args.bash
