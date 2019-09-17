@@ -96,21 +96,21 @@ def get_rawdata(data_dir, instrument="HE"):
     #read filenames
     if instrument == "HE":
         try:filename     = sorted(glob.glob(data_dir + '/HE/*HE-Evt_FFFFFF_V[1-9]*'))[-1]
-        except:print("\nERROR: Event file(Evt) not exist...\n");sys.exit()
+        except:print("\nERROR: Event file(Evt) not exist...skip this observation\n");
         try:orbitname    = sorted(glob.glob(data_dir + '/ACS/*_Orbit_*V[1-9]*'))[-1]
-        except:print("\nERROR: Orbit file(Orbit) not exist...\n");sys.exit()
+        except:print("\nERROR: Orbit file(Orbit) not exist...skip this observation\n");
         try:attname      = sorted(glob.glob(data_dir + '/ACS/*_Att_*V[1-9]*'))[-1]
-        except:print("\nERROR: Attitude file(Att) not exist...\n");sys.exit()
+        except:print("\nERROR: Attitude file(Att) not exist...skip this observation\n");
         try:hvfilename   = sorted(glob.glob(data_dir + '/HE/HXMT*HV_FFFFFF*V[1-9]*'))[-1]
-        except:print("\nERROR: High Voltage file(HV) not exist...\n");sys.exit()
+        except:print("\nERROR: High Voltage file(HV) not exist...skip this observation\n");
         try:pmfilename   = sorted(glob.glob(data_dir + '/HE/HXMT*PM_FFFFFF*V[1-9]*'))[-1]
-        except:print("\nERROR: Particle Monitor file(PM) not exist...\n");sys.exit()
+        except:print("\nERROR: Particle Monitor file(PM) not exist...skip this observation\n");
         try:deadfilename = sorted(glob.glob(data_dir + '/HE/HXMT*DTime*V[1-9]*'))[-1]
-        except:print("\nERROR: Dead time file(DTime) not exist...\n");sys.exit()
+        except:print("\nERROR: Dead time file(DTime) not exist...skip this observation\n");
         try:tempfilename = sorted(glob.glob(data_dir + '/HE/HXMT*TH*V[1-9]*'))[-1]
-        except:print("\nERROR: Temperature file(TH) not exist...\n");sys.exit()
+        except:print("\nERROR: Temperature file(TH) not exist...skip this observation\n");
         try:ehkfilename  = sorted(glob.glob(data_dir + '/AUX/*_EHK_*V[1-9]*'))[-1]
-        except:print("\nERROR: House Keeping file(EHK) not exist...\n");sys.exit()
+        except:print("\nERROR: House Keeping file(EHK) not exist...skip this observation\n");
 
         rawdata_name = ["Evt", "Orbit", "Att", "HV", "PM", "DTime", "TH", "EHK"]
         rawdata_content = [filename, orbitname, attname, hvfilename, pmfilename, deadfilename, tempfilename, ehkfilename]
@@ -121,17 +121,17 @@ def get_rawdata(data_dir, instrument="HE"):
     elif instrument == "ME":
 
         try:filename     = sorted(glob.glob(data_dir + '/ME/*ME-Evt_FFFFFF_V[1-9]*'))[-1]
-        except:print("\nERROR: Event file(Evt) not exist...\n");sys.exit()
+        except:print("\nERROR: Event file(Evt) not exist...skip this observation\n");
         try:orbitname    = sorted(glob.glob(data_dir + '/ACS/*_Orbit_*V[1-9]*'))[-1]
-        except:print("\nERROR: Orbit file(Orbit) not exist...\n");sys.exit()
+        except:print("\nERROR: Orbit file(Orbit) not exist...skip this observation\n");
         try:attname      = sorted(glob.glob(data_dir + '/ACS/*_Att_*V[1-9]*'))[-1]
-        except:print("\nERROR: Attitude file(Att) not exist...\n");sys.exit()
+        except:print("\nERROR: Attitude file(Att) not exist...skip this observation\n");
         try:tempfilename = sorted(glob.glob(data_dir + '/ME/HXMT*TH*V[1-9]*'))[-1]
-        except:print("\nERROR: Temperature file(TH) not exist...\n");sys.exit()
+        except:print("\nERROR: Temperature file(TH) not exist...skip this observation\n");
         try:instatname   = sorted(glob.glob(data_dir + '/ME/HXMT*InsStat*V[1-9]*'))[-1]
-        except:print("\nERROR: Instrument Status file(InsStat) not exist...\n");sys.exit()
+        except:print("\nERROR: Instrument Status file(InsStat) not exist...skip this observation\n");
         try:ehkfilename  = sorted(glob.glob(data_dir + '/AUX/*_EHK_*V[1-9]*'))[-1]
-        except:print("\nERROR: House Keeping file(EHK) not exist...\n");sys.exit()
+        except:print("\nERROR: House Keeping file(EHK) not exist...skip this observation\n");
 
         rawdata_name = ["Evt", "Orbit", "Att", "TH", "EHK", "InsStat"]
         rawdata_content = [filename, orbitname, attname, tempfilename, ehkfilename, instatname]
@@ -142,17 +142,17 @@ def get_rawdata(data_dir, instrument="HE"):
     elif instrument == "LE":
 
         try:filename     = sorted(glob.glob(data_dir + '/LE/*LE-Evt_FFFFFF_V[1-9]*'))[-1]
-        except:print("\nERROR: Event file(Evt) not exist...\n");sys.exit()
+        except:print("\nERROR: Event file(Evt) not exist...skip this observation\n");
         try:orbitname    = sorted(glob.glob(data_dir + '/ACS/*_Orbit_*V[1-9]*'))[-1]
-        except:print("\nERROR: Orbit file(Orbit) not exist...\n");sys.exit()
+        except:print("\nERROR: Orbit file(Orbit) not exist...skip this observation\n");
         try:attname      = sorted(glob.glob(data_dir + '/ACS/*_Att_*V[1-9]*'))[-1]
-        except:print("\nERROR: Attitude file(Att) not exist...\n");sys.exit()
+        except:print("\nERROR: Attitude file(Att) not exist...skip this observation\n");
         try:tempfilename = sorted(glob.glob(data_dir + '/LE/HXMT*TH*V[1-9]*'))[-1]
-        except:print("\nERROR: Temperature file(TH) not exist...\n");sys.exit()
+        except:print("\nERROR: Temperature file(TH) not exist...skip this observation\n");
         try:instatname   = sorted(glob.glob(data_dir + '/LE/HXMT*InsStat*V[1-9]*'))[-1]
-        except:print("\nERROR: Instrument Status file(InsStat) not exist...\n");sys.exit()
+        except:print("\nERROR: Instrument Status file(InsStat) not exist...skip this observation\n");
         try:ehkfilename  = sorted(glob.glob(data_dir + '/AUX/*_EHK_*V[1-9]*'))[-1]
-        except:print("\nERROR: House Keeping file(EHK) not exist...\n");sys.exit()
+        except:print("\nERROR: House Keeping file(EHK) not exist...skip this observation\n");
 
         rawdata_name = ["Evt", "Orbit", "Att", "TH", "EHK", "InsStat"]
         rawdata_content = [filename, orbitname, attname, tempfilename, ehkfilename, instatname]
@@ -604,16 +604,21 @@ if __name__ == "__main__":
         for data_dir,product_dir in zip(inputfile,outputfile):
             data_dir = data_dir[0:-1]
             product_dir = product_dir[0:-1]
+            print("creating pipeline for ... ",data_dir)
             if args.hxbary:
                 ra = args.ra
                 dec = args.dec
-                lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="HE")
-                lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="ME")
-                lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="LE")
+                try:
+                    lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="HE")
+                    lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="ME")
+                    lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="LE")
+                except:continue
             else:
-                lines = lines + main(data_dir, product_dir, instrument="HE")
-                lines = lines + main(data_dir, product_dir, instrument="ME")
-                lines = lines + main(data_dir, product_dir,instrument="LE")
+                try:
+                    lines = lines + main(data_dir, product_dir, instrument="HE")
+                    lines = lines + main(data_dir, product_dir, instrument="ME")
+                    lines = lines + main(data_dir, product_dir,instrument="LE")
+                except:continue
         if args.bash:
             bashfile  = args.bash
             with open(bashfile,'w')as fout:
