@@ -1,3 +1,6 @@
+### 0.0.4: September 23, 2019
+* Add a GitLab CI/CD pipeline script gitlab-ci.yml for auto check the status of the codes !9668cc17189180833ed3d94f2b701eca3a710d2f
+
 ### 0.0.3: September 17, 2019
 * Print the observation ID when deal with file lists. !908c9470e06efd9e001e1da2084565630a0bec72
 * Bug fixed: unexpected exit of programme happened when file not found !908c9470e06efd9e001e1da2084565630a0bec72
