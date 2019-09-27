@@ -635,7 +635,7 @@ if __name__ == "__main__":
                 print(i)
 
     elif args.input == None:
-        print 'ERROR: no inputs. "python he_pipeline.py -h" see help'
+        print('ERROR: no inputs. "python he_pipeline.py -h" see help')
     else:
         data_dir = args.input
         product_dir = args.output
