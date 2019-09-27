@@ -1,3 +1,7 @@
+
+### 0.0.5: September 27, 2019
+* Bug fixed: print function error for Python 3.x
+
 ### 0.0.4: September 23, 2019
 * Add a GitLab CI/CD pipeline script gitlab-ci.yml for auto check the status of the codes !9668cc17189180833ed3d94f2b701eca3a710d2f
 
