@@ -1,3 +1,7 @@
+### 0.0.6： October 29, 2019
+* New Feature: Add the hxbary module !31fadd7a008ed720951a0865d8b52d1732f08b57
+* Modify the file structure of output directory !31fadd7a008ed720951a0865d8b52d1732f08b57
+
 ### 0.0.5: September 27, 2019
 * Bug fixed: print function error for Python 3.x. !abe910c54a46c34d73cfe3f66b076a3d9b6bbe14
 
