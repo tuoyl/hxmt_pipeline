@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 ##################################
 '''
-HXMT pipeline, run python hpipeline_v2.01.py -h for help.
+HXMT pipeline, run python hpipeline.py -h for help.
+
+NOTE: this script is suitable for HXMTDAS v2.01,
+check out "http://code.ihep.ac.cn/tuoyl/hxmt_pipeline" for details.
 '''
 import argparse
 import os
@@ -12,14 +15,14 @@ from astropy.io import fits
 def get_dir(product_dir, instrument="HE"):
     if instrument == "HE":
         #TODO:use os.path.join instead of '/'
-        aux_dir = product_dir + "/AUX/" # AUX path
-        acs_dir = product_dir + "/ACS/" # ACS path
-        he_dir = product_dir + "/HE/"   # HE  path
-        clean_dir = product_dir + "/HE/cleaned/"  # HE cleaned data path
-        tmp_dir = product_dir + "/HE/tmp/" # HE temporary data
-        spec_dir = product_dir +"/HE/spectra/" # spectra results path
-        lc_dir = product_dir + "/HE/lightcurves/" # light curve results path
-        rsp_dir = product_dir + "/HE/rsp/" # RSP results path
+        aux_dir = product_dir    # AUX path
+        acs_dir = product_dir    # ACS path
+        he_dir = product_dir     # HE  path
+        clean_dir = product_dir  # HE cleaned data path
+        tmp_dir = product_dir    # HE temporary data
+        spec_dir = product_dir   # spectra results path
+        lc_dir = product_dir     # light curve results path
+        rsp_dir = product_dir    # RSP results path
     
         #make directory for data structure
         if not os.path.isdir(product_dir):os.system('mkdir -p '+product_dir)
@@ -38,14 +41,14 @@ def get_dir(product_dir, instrument="HE"):
         return dir_dict
 
     if instrument == "ME":
-        aux_dir = product_dir + "/AUX/" # AUX path
-        acs_dir = product_dir + "/ACS/" # ACS path
-        me_dir = product_dir + "/HE/"   # ME  path
-        clean_dir = product_dir + "/ME/cleaned/"  # ME cleaned data path
-        tmp_dir = product_dir + "/ME/tmp/" # ME temporary data
-        spec_dir = product_dir +"/ME/spectra/" # spectra results path
-        lc_dir = product_dir + "/ME/lightcurves/" # light curve results path
-        rsp_dir = product_dir + "/ME/rsp/" # RSP results path
+        aux_dir = product_dir      # AUX path
+        acs_dir = product_dir      # ACS path
+        me_dir = product_dir       # ME  path
+        clean_dir = product_dir    # ME cleaned data path
+        tmp_dir = product_dir      # ME temporary data
+        spec_dir = product_dir     # spectra results path
+        lc_dir = product_dir       # light curve results path
+        rsp_dir = product_dir      # RSP results path
     
         #make directory for data structure
         if not os.path.isdir(product_dir):os.system('mkdir -p '+product_dir)
@@ -64,14 +67,14 @@ def get_dir(product_dir, instrument="HE"):
         return dir_dict
 
     if instrument == "LE":
-        aux_dir = product_dir + "/AUX/" # AUX path
-        acs_dir = product_dir + "/ACS/" # ACS path
-        le_dir = product_dir + "/LE/"   # LE  path
-        clean_dir = product_dir + "/LE/cleaned/"  # LE cleaned data path
-        tmp_dir = product_dir + "/LE/tmp/" # LE temporary data
-        spec_dir = product_dir +"/LE/spectra/" # spectra results path
-        lc_dir = product_dir + "/LE/lightcurves/" # light curve results path
-        rsp_dir = product_dir + "/LE/rsp/" # RSP results path
+        aux_dir = product_dir       # AUX path
+        acs_dir = product_dir       # ACS path
+        le_dir = product_dir        # LE  path
+        clean_dir = product_dir     # LE cleaned data path
+        tmp_dir = product_dir       # LE temporary data
+        spec_dir = product_dir      # spectra results path
+        lc_dir = product_dir        # light curve results path
+        rsp_dir = product_dir       # RSP results path
     
         #make directory for data structure
         if not os.path.isdir(product_dir):os.system('mkdir -p '+product_dir)
@@ -468,8 +471,18 @@ def lebkgmap(data_dict, dir_dict, flag='lc', minPI=25, maxPI=100):
                     screenfile, gtifile, listfile, str(minPI), str(maxPI), outfile))
     return lebkgmap_cmd
 
-def hxbary(data_dict, dir_dict):
-    pass
+def hxbary(data_dict, dir_dict, ra=-1, dec=-91, instrument="HE"):
+    prefix = get_expID(data_dict)
+    if instrument == "HE":
+        screenfile = os.path.join(dir_dict["clean"], prefix+"_HE_screen.fits")
+    elif instrument == "ME":
+        screenfile = os.path.join(dir_dict["clean"], prefix+"_ME_screen.fits")
+    elif instrument == "LE":
+        screenfile = os.path.join(dir_dict["clean"], prefix+"_LE_screen.fits")
+    orbitfile  = data_dict["Orbit"]
+    hxbary_cmd = 'hxbary evtfile=%s orbitfile="%s" ra=%s dec=%s eph=2 clobber=yes'%(
+            screenfile, orbitfile, str(ra), str(dec))
+    return hxbary_cmd
 
 def get_expID(data_dict):
     #get the Exposure ID and assign as prefix for files
@@ -513,7 +526,7 @@ def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91):
         hebkgmap_cmd = hebkgmap(rawfiles, outdirs, flag="lc", minPI=26, maxPI=120)
         pipeline_commands = pipeline_commands + hebkgmap_cmd
         if (ra != -1)&(dec != -91):
-            hxbary_cmd = hxbary(rawfiles, outdirs)
+            hxbary_cmd = hxbary(rawfiles, outdirs, ra=ra, dec=dec, instrument=instrument)
             pipeline_commands.append(hxbary_cmd)
     elif instrument == "ME":
         #mepical
@@ -545,7 +558,7 @@ def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91):
         mebkgmap_cmd = mebkgmap(rawfiles, outdirs, flag="lc", minPI=120, maxPI=290)
         pipeline_commands = pipeline_commands + mebkgmap_cmd
         if (ra != -1)&(dec != -91):
-            hxbary_cmd = hxbary(rawfiles, outdirs)
+            hxbary_cmd = hxbary(rawfiles, outdirs, ra=ra, dec=dec, instrument=instrument)
             pipeline_commands.append(hxbary_cmd)
     elif instrument == "LE":
         #lepical
@@ -577,7 +590,8 @@ def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91):
         lebkgmap_cmd = lebkgmap(rawfiles, outdirs, flag="lc", minPI=106, maxPI=1170)
         pipeline_commands = pipeline_commands + lebkgmap_cmd
         if (ra != -1)&(dec != -91):
-            hxbary_cmd = hxbary(rawfiles, outdirs)
+            hxbary_cmd = hxbary(rawfiles, outdirs, ra=ra, dec=dec, instrument=instrument)
+            print(hxbary_cmd)
             pipeline_commands.append(hxbary_cmd)
     return pipeline_commands
 
