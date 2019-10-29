@@ -4,6 +4,6 @@ stages:
 test:
   stage: test
   script:
-  - python hpipeline_v2.01.py -h
+  - python hpipeline.py -h
   tags:
   - osx
