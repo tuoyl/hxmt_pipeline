@@ -591,7 +591,6 @@ def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91):
         pipeline_commands = pipeline_commands + lebkgmap_cmd
         if (ra != -1)&(dec != -91):
             hxbary_cmd = hxbary(rawfiles, outdirs, ra=ra, dec=dec, instrument=instrument)
-            print(hxbary_cmd)
             pipeline_commands.append(hxbary_cmd)
     return pipeline_commands
 
