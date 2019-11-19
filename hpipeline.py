@@ -211,7 +211,9 @@ def megtigen(data_dict, dir_dict):
             'clobber=yes history=yes'%(tempfile, ehkfile, outfile))
     #new le gti
     gradefile  = os.path.join(dir_dict["tmp"], prefix+"_ME_grade.fits")
-    newgti_cmd = 'megti %s %s %s'%(gradefile, outfile, outfile)
+    baddetector= "$HEADAS/refdata/medetectorstatus.fits"
+    newstatus  = os.path.join(dir_dict["tmp"], prefix+"_ME_status.fits")
+    newgti_cmd = 'megti %s %s %s %s %s'%(gradefile, outfile, outfile, baddetector, newstatus)
     megtigen_cmd.append(newgti_cmd)
     return megtigen_cmd
 
@@ -267,10 +269,11 @@ def mescreen(data_dict, dir_dict):
     pifile = os.path.join(dir_dict["tmp"], prefix+"_ME_grade.fits")
     gtifile  = os.path.join(dir_dict["tmp"], prefix+"_ME_gti.fits")
     outfile  = os.path.join(dir_dict["clean"], prefix+"_ME_screen.fits")
+    statusfile = os.path.join(dir_dict["tmp"], prefix+"_ME_status.fits")
     userdetid = "0-53"
-    mescreen_cmd = 'mescreen evtfile="%s" gtifile="%s" outfile="%s" '\
+    mescreen_cmd = 'mescreen evtfile="%s" gtifile="%s" outfile="%s" baddetfile="%s" '\
     'userdetid="%s" starttime=0 stoptime=0 minPI=0 maxPI=1023 clobber=yes'%(
-            pifile, gtifile, outfile, userdetid)
+            pifile, gtifile, outfile, statusfile, userdetid)
     return mescreen_cmd
 
 def lescreen(data_dict, dir_dict):
