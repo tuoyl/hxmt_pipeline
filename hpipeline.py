@@ -217,6 +217,7 @@ def megtigen(data_dict, dir_dict):
 
 def legtigen(data_dict, dir_dict):
     legtigen_cmd = []
+    eventfile= data_dict["Evt"]
     tempfile = data_dict["TH"]
     ehkfile = data_dict["EHK"]
     instatfile = data_dict["InsStat"]
@@ -268,7 +269,7 @@ def mescreen(data_dict, dir_dict):
     outfile  = os.path.join(dir_dict["clean"], prefix+"_ME_screen.fits")
     userdetid = "0-53"
     mescreen_cmd = 'mescreen evtfile="%s" gtifile="%s" outfile="%s" '\
-    'userdetid="%s" starttime=0 stoptime=0 minPI=0 maxPI=1024 clobber=yes'%(
+    'userdetid="%s" starttime=0 stoptime=0 minPI=0 maxPI=1023 clobber=yes'%(
             pifile, gtifile, outfile, userdetid)
     return mescreen_cmd
 
@@ -338,7 +339,7 @@ def mespecgen(data_dict, dir_dict):
     userdetid   = "0-7,11-25,29-43,47-53"
     mespecgen_cmd = 'mespecgen evtfile="%s" outfile="%s" '\
             'deadfile="%s" userdetid="%s" '\
-            'starttime=0 stoptime=0 minPI=0 maxPI=1024'%(
+            'starttime=0 stoptime=0 minPI=0 maxPI=1023'%(
                     screenfile, outfile, deadfile,userdetid)
     return mespecgen_cmd
 
@@ -356,7 +357,7 @@ def lespecgen(data_dict, dir_dict):
 
 
 
-def herspgen(data_dict, dir_dict):
+def herspgen(data_dict, dir_dict, ra=-1, dec=-91):
     herspgen_cmd = []
     prefix = get_expID(data_dict)
     for i in range(18):
@@ -369,11 +370,11 @@ def herspgen(data_dict, dir_dict):
         rspfilename = rspfilename.replace("pha", "fits")
         outfile = os.path.join(dir_dict["response"], rspfilename)
         attfile = data_dict["Att"]
-        rsp_cmd = "herspgen %s %s %s %s %s clobber=yes"%(phafile, outfile, attfile, "-1", "-91")
+        rsp_cmd = "herspgen %s %s %s %s %s clobber=yes"%(phafile, outfile, attfile, str(ra), str(dec))
         herspgen_cmd.append(rsp_cmd)
     return herspgen_cmd
 
-def merspgen(data_dict, dir_dict):
+def merspgen(data_dict, dir_dict, ra=-1, dec=-91):
     prefix = get_expID(data_dict)
     phafile = os.path.join(dir_dict["spectra"], prefix+"_ME_spec_g%s_%s.pha"%('0','0-53'))
     phafilename = os.path.basename(phafile)
@@ -381,10 +382,10 @@ def merspgen(data_dict, dir_dict):
     rspfilename = rspfilename.replace("pha", "fits")
     outfile = os.path.join(dir_dict["response"], rspfilename)
     attfile = data_dict["Att"]
-    merspgen_cmd = "merspgen %s %s %s %s %s clobber=yes"%(phafile, outfile, attfile, "-1", "-91")
+    merspgen_cmd = "merspgen %s %s %s %s %s clobber=yes"%(phafile, outfile, attfile, str(ra), str(dec))
     return merspgen_cmd
 
-def lerspgen(data_dict, dir_dict):
+def lerspgen(data_dict, dir_dict, ra=-1, dec=-91):
     prefix = get_expID(data_dict)
     phafile = os.path.join(dir_dict["spectra"], prefix+"_LE_spec_g%s_%s.pha"%('0','0-94'))
     phafilename = os.path.basename(phafile)
@@ -393,7 +394,7 @@ def lerspgen(data_dict, dir_dict):
     outfile = os.path.join(dir_dict["response"], rspfilename)
     attfile = data_dict["Att"]
     tempfile = data_dict["TH"]
-    lerspgen_cmd = "lerspgen %s %s %s %s %s %s clobber=yes"%(phafile, outfile, attfile, tempfile, "-1", "-91")
+    lerspgen_cmd = "lerspgen %s %s %s %s %s %s clobber=yes"%(phafile, outfile, attfile, tempfile, str(ra), str(dec))
     return lerspgen_cmd
 
 def hebkgmap(data_dict, dir_dict, flag='lc', minPI=25, maxPI=100):
@@ -493,7 +494,7 @@ def get_expID(data_dict):
     exp_id = exp_id[0]
     return exp_id
 
-def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91):
+def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91, bary_flag=False):
     # read raw data
     rawfiles = get_rawdata(data_dir,instrument=instrument)
     outdirs  = get_dir(product_dir, instrument=instrument)
@@ -516,7 +517,7 @@ def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91):
         hespecgen_cmd = hespecgen(rawfiles, outdirs)
         pipeline_commands.append(hespecgen_cmd)
         #herspgen
-        herspgen_cmd = herspgen(rawfiles, outdirs)
+        herspgen_cmd = herspgen(rawfiles, outdirs, ra=ra, dec=dec)
         # herspgen is a list
         pipeline_commands = pipeline_commands + herspgen_cmd
         #hebkgmap for spec
@@ -525,7 +526,7 @@ def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91):
         #hebkgmap for lc
         hebkgmap_cmd = hebkgmap(rawfiles, outdirs, flag="lc", minPI=26, maxPI=120)
         pipeline_commands = pipeline_commands + hebkgmap_cmd
-        if (ra != -1)&(dec != -91):
+        if bary_flag:
             hxbary_cmd = hxbary(rawfiles, outdirs, ra=ra, dec=dec, instrument=instrument)
             pipeline_commands.append(hxbary_cmd)
     elif instrument == "ME":
@@ -548,7 +549,7 @@ def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91):
         mespecgen_cmd = mespecgen(rawfiles, outdirs)
         pipeline_commands.append(mespecgen_cmd)
         #merspgen
-        merspgen_cmd = merspgen(rawfiles, outdirs)
+        merspgen_cmd = merspgen(rawfiles, outdirs, ra=ra, dec=dec)
         # merspgen is a list
         pipeline_commands.append(merspgen_cmd)
         #mebkgmap for spec
@@ -557,7 +558,7 @@ def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91):
         #mebkgmap for lc
         mebkgmap_cmd = mebkgmap(rawfiles, outdirs, flag="lc", minPI=120, maxPI=290)
         pipeline_commands = pipeline_commands + mebkgmap_cmd
-        if (ra != -1)&(dec != -91):
+        if bary_flag:
             hxbary_cmd = hxbary(rawfiles, outdirs, ra=ra, dec=dec, instrument=instrument)
             pipeline_commands.append(hxbary_cmd)
     elif instrument == "LE":
@@ -580,7 +581,7 @@ def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91):
         lespecgen_cmd = lespecgen(rawfiles, outdirs)
         pipeline_commands.append(lespecgen_cmd)
         #lerspgen
-        lerspgen_cmd = lerspgen(rawfiles, outdirs)
+        lerspgen_cmd = lerspgen(rawfiles, outdirs, ra=ra, dec=dec)
         # lerspgen is a list
         pipeline_commands.append(lerspgen_cmd)
         #lebkgmap for spec
@@ -589,7 +590,7 @@ def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91):
         #lebkgmap for lc
         lebkgmap_cmd = lebkgmap(rawfiles, outdirs, flag="lc", minPI=106, maxPI=1170)
         pipeline_commands = pipeline_commands + lebkgmap_cmd
-        if (ra != -1)&(dec != -91):
+        if bary_flag:
             hxbary_cmd = hxbary(rawfiles, outdirs, ra=ra, dec=dec, instrument=instrument)
             pipeline_commands.append(hxbary_cmd)
     return pipeline_commands
@@ -622,16 +623,23 @@ if __name__ == "__main__":
                 ra = args.ra
                 dec = args.dec
                 try:
-                    lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="HE")
-                    lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="ME")
-                    lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="LE")
+                    lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="HE", bary_flag=True)
+                    lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="ME", bary_flag=True)
+                    lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="LE", bary_flag=True)
                 except:continue
             else:
-                try:
-                    lines = lines + main(data_dir, product_dir, instrument="HE")
-                    lines = lines + main(data_dir, product_dir, instrument="ME")
-                    lines = lines + main(data_dir, product_dir,instrument="LE")
-                except:continue
+                if args.ra or args.dec:
+                    try:
+                        lines = lines + main(data_dir, product_dir,ra=ra, dec=dec, instrument="HE", bary_flag=False)
+                        lines = lines + main(data_dir, product_dir,ra=ra, dec=dec, instrument="ME", bary_flag=False)
+                        lines = lines + main(data_dir, product_dir,ra=ra, dec=dec, instrument="LE", bary_flag=False)
+                    except:continue
+                else:
+                    try:
+                        lines = lines + main(data_dir, product_dir, instrument="HE", bary_flag=False)
+                        lines = lines + main(data_dir, product_dir, instrument="ME", bary_flag=False)
+                        lines = lines + main(data_dir, product_dir, instrument="LE", bary_flag=False)
+                    except:continue
         if args.bash:
             bashfile  = args.bash
             with open(bashfile,'w')as fout:
@@ -661,13 +669,19 @@ if __name__ == "__main__":
         if args.hxbary:
             ra = args.ra
             dec = args.dec
-            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec,instrument="HE")
-            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec,instrument="ME")
-            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec,instrument="LE")
+            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec,instrument="HE",bary_flag=True)
+            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec,instrument="ME",bary_flag=True)
+            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec,instrument="LE",bary_flag=True)
+        elif args.ra or args.dec:
+            ra = args.ra
+            dec = args.dec
+            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="HE",bary_flag=False)
+            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="ME",bary_flag=False)
+            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="LE",bary_flag=False)
         else:
-            lines = lines + main(data_dir, product_dir, instrument="HE")
-            lines = lines + main(data_dir, product_dir, instrument="ME")
-            lines = lines + main(data_dir, product_dir,instrument="LE")
+            lines = lines + main(data_dir, product_dir, instrument="HE", bary_flag=False)
+            lines = lines + main(data_dir, product_dir, instrument="ME", bary_flag=False)
+            lines = lines + main(data_dir, product_dir, instrument="LE", bary_flag=False)
 
         if bashfile == "":
             for i in lines:
