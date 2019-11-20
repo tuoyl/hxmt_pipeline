@@ -1,3 +1,7 @@
+### 0.0.8:  November 20, 2019
+* New Feature: merge HE spectra and response files
+* Modify the value of parameter evtfile of "legtigen"
+
 ### 0.0.7:  November 19, 2019
 * New Feature: read RA and DEC when users asigned those values for RSPGEN !f369becb89a647a57bb3af516e5037065cda298b
 * Modify the maxPI for mescreen (from 1024 to 1023) !f369becb89a647a57bb3af516e5037065cda298b
