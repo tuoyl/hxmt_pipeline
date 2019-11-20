@@ -1,6 +1,6 @@
 ### 0.0.8:  November 20, 2019
-* New Feature: merge HE spectra and response files
-* Modify the value of parameter evtfile of "legtigen"
+* New Feature: merge HE spectra and response files !b578cb1bc014df0bfc79186f2d96fc7ef7b4148c
+* Modify the value of parameter evtfile of "legtigen" !b578cb1bc014df0bfc79186f2d96fc7ef7b4148c
 
 ### 0.0.7:  November 19, 2019
 * New Feature: read RA and DEC when users asigned those values for RSPGEN !f369becb89a647a57bb3af516e5037065cda298b
