@@ -227,7 +227,7 @@ def legtigen(data_dict, dir_dict):
     outfile = os.path.join(dir_dict["tmp"], prefix+"_LE_gti.fits")
     legtigen_cmd.append('legtigen evtfile="%s" instatusfile="%s" tempfile="%s" ehkfile="%s" '\
             'outfile="%s" defaultexpr=NONE expr="ELV>10&&DYE_ELV>30&&COR>8&&T_SAA>=300&&TN_SAA>=300&&ANG_DIST<=0.04" '\
-            'clobber=yes history=yes'%("", instatfile, tempfile, ehkfile, outfile))
+            'clobber=yes history=yes'%("NONE", instatfile, tempfile, ehkfile, outfile))
     #new le gti
     reconfile = os.path.join(dir_dict["tmp"], prefix+"_LE_recon.fits")
     newgti_cmd = 'legti %s %s %s'%(reconfile, outfile, outfile)
@@ -488,6 +488,32 @@ def hxbary(data_dict, dir_dict, ra=-1, dec=-91, instrument="HE"):
             screenfile, orbitfile, str(ra), str(dec))
     return hxbary_cmd
 
+def hhe_spec2pi(data_dict, dir_dict):
+    hhe_spec2pi_cmd = []
+    prefix = get_expID(data_dict)
+    spec_files = os.path.join(dir_dict["spectra"], prefix+"_HE_spec_g*.pha")
+    spec_list  = os.path.join(dir_dict["spectra"], prefix+"_HE_merge_speclist.txt")
+    create_src_list_cmd = 'ls %s | sort -V | grep -v "_HE_spec_g16_16.pha" > %s'%(spec_files, spec_list)
+    hhe_spec2pi_cmd.append(create_src_list_cmd)
+
+    bkg_files = os.path.join(dir_dict["spectra"], prefix+"_HE_specbkg_*.pha")
+    bkg_list  = os.path.join(dir_dict["spectra"], prefix+"_HE_merge_bkglist.txt")
+    create_bkg_list_cmd = 'ls %s | sort -V | grep -v "_HE_specbkg_16.pha"> %s'%(bkg_files, bkg_list)
+    hhe_spec2pi_cmd.append(create_bkg_list_cmd)
+
+    rsp_files = os.path.join(dir_dict["response"], prefix+"_HE_rsp_g*.fits")
+    rsp_list  = os.path.join(dir_dict["response"], prefix+"_HE_merge_rsplist.txt")
+    create_rsp_list_cmd = 'ls %s | sort -V > %s'%(rsp_files, rsp_list)
+    hhe_spec2pi_cmd.append(create_rsp_list_cmd)
+
+    out_spec = os.path.join(dir_dict["spectra"], prefix+"_HE_spec_all.pha")
+    out_bkg  = os.path.join(dir_dict["spectra"], prefix+"_HE_specbkg_all.pha")
+    out_rsp  = os.path.join(dir_dict["spectra"], prefix+"_HE_rsp_all.fits")
+    merge_HE_cmd = "hhe_spec2pi %s %s %s %s %s %s" % (spec_list, bkg_list, rsp_list, out_spec, out_bkg, out_rsp)
+    hhe_spec2pi_cmd.append(merge_HE_cmd)
+    
+    return hhe_spec2pi_cmd
+
 def get_expID(data_dict):
     #get the Exposure ID and assign as prefix for files
     evtfile = data_dict["Evt"]
@@ -529,6 +555,9 @@ def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91, bary_flag=False
         #hebkgmap for lc
         hebkgmap_cmd = hebkgmap(rawfiles, outdirs, flag="lc", minPI=26, maxPI=120)
         pipeline_commands = pipeline_commands + hebkgmap_cmd
+        #hhe_spec2pi for spec
+        hhe_spec2pi_cmd = hhe_spec2pi(rawfiles, outdirs)
+        pipeline_commands = pipeline_commands + hhe_spec2pi_cmd
         if bary_flag:
             hxbary_cmd = hxbary(rawfiles, outdirs, ra=ra, dec=dec, instrument=instrument)
             pipeline_commands.append(hxbary_cmd)
