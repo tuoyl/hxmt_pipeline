@@ -1,6 +1,7 @@
 ### 0.0.7:  November 19, 2019
 * New Feature: read RA and DEC when users asigned those values for RSPGEN !f369becb89a647a57bb3af516e5037065cda298b
 * Modify the maxPI for mescreen (from 1024 to 1023) !f369becb89a647a57bb3af516e5037065cda298b
+* New Feature: read $HEADAS/refdata/medetectorstatus.fits when execute megti !b08b5c235bc1d759445dfa3bbe109c00cff15a01
 
 ### 0.0.6： October 29, 2019
 * New Feature: Add the hxbary module !31fadd7a008ed720951a0865d8b52d1732f08b57
