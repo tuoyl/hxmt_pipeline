@@ -1,3 +1,7 @@
+### 0.1.0:  November 26, 2019
+* mebkgmap: select status file for bad pixel selection
+* finish internal test
+
 ### 0.0.8:  November 20, 2019
 * New Feature: merge HE spectra and response files !b578cb1bc014df0bfc79186f2d96fc7ef7b4148c
 * Modify the value of parameter evtfile of "legtigen" !b578cb1bc014df0bfc79186f2d96fc7ef7b4148c
