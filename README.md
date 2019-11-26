@@ -7,7 +7,7 @@ HXMT 批处理Python程序。使用该程序，你可以产生一个shell脚本�
 ## 获得该脚本
 
 该脚本托管在高能所GitLab的仓库 http://code.ihep.ac.cn/tuoyl/hxmt_pipeline.git
-你可以通过 ```git clone http://code.ihep.ac.cn/tuoyl/hxmt_pipeline.git``` 下载，并使用```git pull```更新。
+你可以通过 ```git clone git@code.ihep.ac.cn:hxmthsdc/hxmt_pipeline.git``` 下载，并使用```git pull```更新。
 
 ## 使用该脚本
 
