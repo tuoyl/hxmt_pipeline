@@ -3,7 +3,7 @@
 '''
 HXMT pipeline, run python hpipeline.py -h for help.
 
-NOTE: this script is suitable for HXMTDAS v2.01,
+NOTE: this script is suitable for HXMTDAS v2.01, v2.02,
 check out "http://code.ihep.ac.cn/tuoyl/hxmt_pipeline" for details.
 '''
 import argparse
