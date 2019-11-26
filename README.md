@@ -15,7 +15,7 @@ HXMT 批处理Python程序。使用该程序，你可以产生一个shell脚本�
 
 ```
 usage: hpipeline.py [-h] [-i INPUT] [-I INPUTLIST] [-o OUTPUT]
-                            [-O OUTPUTLIST] [-b BASH_SCRIPT] [--hxbary] [-r R]
+                            [-O OUTPUTLIST] [-b BASH_SCRIPT] [--hxbary] [-r RA]
                             [-d DEC]
                             
 
