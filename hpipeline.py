@@ -196,7 +196,7 @@ def hegtigen(data_dict, dir_dict):
     prefix = get_expID(data_dict)
     outfile = os.path.join(dir_dict["tmp"], prefix+"_HE_gti.fits")
     hegtigen_cmd = 'hegtigen hvfile="%s" tempfile="%s" pmfile="%s" outfile="%s" '\
-    'ehkfile="%s" defaultexpr=NONE expr="ELV>10&&COR>8&&TN_SAA>300&&T_SAA>300&&ANG_DIST<=0.04" '\
+    'ehkfile="%s" defaultexpr=NONE expr="ELV>10&&COR>8&&SAA_FLAG==0&&TN_SAA>300&&T_SAA>300&&ANG_DIST<=0.04" '\
     'pmexpr="" clobber=yes history=yes'%(hvfile, tempfile, pmfile, outfile, ehkfile)
     return hegtigen_cmd
 
@@ -207,7 +207,7 @@ def megtigen(data_dict, dir_dict):
     prefix = get_expID(data_dict)
     outfile = os.path.join(dir_dict["tmp"], prefix+"_ME_gti.fits")
     megtigen_cmd.append('megtigen tempfile="%s" ehkfile="%s" outfile="%s" '\
-            'defaultexpr=NONE expr="ELV>10&&COR>8&&T_SAA>300&&TN_SAA>300&&ANG_DIST<=0.04" '\
+            'defaultexpr=NONE expr="ELV>10&&COR>8&&SAA_FLAG==0&&T_SAA>300&&TN_SAA>300&&ANG_DIST<=0.04" '\
             'clobber=yes history=yes'%(tempfile, ehkfile, outfile))
     #new le gti
     gradefile  = os.path.join(dir_dict["tmp"], prefix+"_ME_grade.fits")
@@ -226,7 +226,7 @@ def legtigen(data_dict, dir_dict):
     prefix = get_expID(data_dict)
     outfile = os.path.join(dir_dict["tmp"], prefix+"_LE_gti.fits")
     legtigen_cmd.append('legtigen evtfile="%s" instatusfile="%s" tempfile="%s" ehkfile="%s" '\
-            'outfile="%s" defaultexpr=NONE expr="ELV>10&&DYE_ELV>30&&COR>8&&T_SAA>=300&&TN_SAA>=300&&ANG_DIST<=0.04" '\
+            'outfile="%s" defaultexpr=NONE expr="ELV>10&&DYE_ELV>30&&COR>8&&SAA_FLAG==0&&T_SAA>=300&&TN_SAA>=300&&ANG_DIST<=0.04" '\
             'clobber=yes history=yes'%("NONE", instatfile, tempfile, ehkfile, outfile))
     #new le gti
     reconfile = os.path.join(dir_dict["tmp"], prefix+"_LE_recon.fits")
@@ -432,6 +432,7 @@ def mebkgmap(data_dict, dir_dict, flag='lc', minPI=25, maxPI=100):
     ehkfile = data_dict["EHK"]
     gtifile = os.path.join(dir_dict["tmp"], prefix+"_ME_gti.fits")
     deadfile = os.path.join(dir_dict["tmp"],prefix+"_ME_dtime.fits")
+    baddetfile  = os.path.join(dir_dict["tmp"], prefix+"_ME_status.fits")
     tempfile = data_dict["TH"]
     if flag == 'lc':
         lcfile = os.path.join(dir_dict["lightcurves"], prefix+"_ME_lc_*.lc")
@@ -439,16 +440,16 @@ def mebkgmap(data_dict, dir_dict, flag='lc', minPI=25, maxPI=100):
         create_bkglist_cmd = "ls %s | sort -V > %s"%(lcfile,listfile)
         mebkgmap_cmd.append(create_bkglist_cmd)
         outfile = os.path.join(dir_dict["lightcurves"], prefix+"_ME_lcbkg")
-        mebkgmap_cmd.append('mebkgmap lc %s %s %s %s %s %s %s %s %s'%(
-                    screenfile, ehkfile, gtifile, deadfile, tempfile, listfile, str(minPI), str(maxPI), outfile))
+        mebkgmap_cmd.append('mebkgmap lc %s %s %s %s %s %s %s %s %s %s'%(
+                    screenfile, ehkfile, gtifile, deadfile, tempfile, listfile, str(minPI), str(maxPI), outfile, baddetfile))
     if flag == 'spec':
         specfile = os.path.join(dir_dict["spectra"], prefix+"_ME_spec_*.pha")
         listfile = os.path.join(dir_dict["spectra"], prefix+"_ME_spec.txt")
         create_bkglist_cmd = "ls %s | sort -V > %s"%(specfile,listfile)
         mebkgmap_cmd.append(create_bkglist_cmd)
         outfile = os.path.join(dir_dict["spectra"], prefix+"_ME_specbkg")
-        mebkgmap_cmd.append('mebkgmap spec %s %s %s %s %s %s %s %s %s'%(
-                    screenfile, ehkfile, gtifile, deadfile, tempfile, listfile, str(minPI), str(maxPI), outfile))
+        mebkgmap_cmd.append('mebkgmap spec %s %s %s %s %s %s %s %s %s %s'%(
+                    screenfile, ehkfile, gtifile, deadfile, tempfile, listfile, str(minPI), str(maxPI), outfile, baddetfile))
     return mebkgmap_cmd
 
 def lebkgmap(data_dict, dir_dict, flag='lc', minPI=25, maxPI=100):
