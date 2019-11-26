@@ -1,3 +1,7 @@
+### 0.1.1:  November 26, 2019
+* legtigen: modify the output name. !9095e6896260bb4b11b65794528f83e98cf7736d
+* megtigen: modify the output name. !9095e6896260bb4b11b65794528f83e98cf7736d
+
 ### 0.1.0:  November 26, 2019
 * mebkgmap: select status file for bad pixel selection
 * finish internal test

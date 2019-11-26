@@ -205,7 +205,8 @@ def megtigen(data_dict, dir_dict):
     tempfile = data_dict["TH"]
     ehkfile = data_dict["EHK"]
     prefix = get_expID(data_dict)
-    outfile = os.path.join(dir_dict["tmp"], prefix+"_ME_gti.fits")
+    outfile = os.path.join(dir_dict["tmp"], prefix+"_ME_gti_tmp.fits")
+    newgtifile = os.path.join(dir_dict["tmp"], prefix+"_ME_gti.fits")
     megtigen_cmd.append('megtigen tempfile="%s" ehkfile="%s" outfile="%s" '\
             'defaultexpr=NONE expr="ELV>10&&COR>8&&SAA_FLAG==0&&T_SAA>300&&TN_SAA>300&&ANG_DIST<=0.04" '\
             'clobber=yes history=yes'%(tempfile, ehkfile, outfile))
@@ -213,7 +214,7 @@ def megtigen(data_dict, dir_dict):
     gradefile  = os.path.join(dir_dict["tmp"], prefix+"_ME_grade.fits")
     baddetector= "$HEADAS/refdata/medetectorstatus.fits"
     newstatus  = os.path.join(dir_dict["tmp"], prefix+"_ME_status.fits")
-    newgti_cmd = 'megti %s %s %s %s %s'%(gradefile, outfile, outfile, baddetector, newstatus)
+    newgti_cmd = 'megti %s %s %s %s %s'%(gradefile, outfile, newgtifile, baddetector, newstatus)
     megtigen_cmd.append(newgti_cmd)
     return megtigen_cmd
 
@@ -224,13 +225,14 @@ def legtigen(data_dict, dir_dict):
     ehkfile = data_dict["EHK"]
     instatfile = data_dict["InsStat"]
     prefix = get_expID(data_dict)
-    outfile = os.path.join(dir_dict["tmp"], prefix+"_LE_gti.fits")
+    outfile = os.path.join(dir_dict["tmp"], prefix+"_LE_gti_tmp.fits")
+    newgtifile = os.path.join(dir_dict["tmp"], prefix+"_LE_gti.fits")
     legtigen_cmd.append('legtigen evtfile="%s" instatusfile="%s" tempfile="%s" ehkfile="%s" '\
             'outfile="%s" defaultexpr=NONE expr="ELV>10&&DYE_ELV>30&&COR>8&&SAA_FLAG==0&&T_SAA>=300&&TN_SAA>=300&&ANG_DIST<=0.04" '\
             'clobber=yes history=yes'%("NONE", instatfile, tempfile, ehkfile, outfile))
     #new le gti
     reconfile = os.path.join(dir_dict["tmp"], prefix+"_LE_recon.fits")
-    newgti_cmd = 'legti %s %s %s'%(reconfile, outfile, outfile)
+    newgti_cmd = 'legti %s %s %s'%(reconfile, outfile, newgtifile)
     legtigen_cmd.append(newgti_cmd)
     return legtigen_cmd
 
