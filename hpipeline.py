@@ -375,7 +375,7 @@ def herspgen(data_dict, dir_dict, ra=-1, dec=-91):
         rspfilename = rspfilename.replace("pha", "fits")
         outfile = os.path.join(dir_dict["response"], rspfilename)
         attfile = data_dict["Att"]
-        rsp_cmd = "herspgen %s %s %s %s %s clobber=yes"%(phafile, outfile, attfile, str(ra), str(dec))
+        rsp_cmd = 'herspgen phafile="%s" outfile="%s" attfile="%s" ra="%s" dec="%s" clobber=yes'%(phafile, outfile, attfile, str(ra), str(dec))
         herspgen_cmd.append(rsp_cmd)
     return herspgen_cmd
 
@@ -387,7 +387,7 @@ def merspgen(data_dict, dir_dict, ra=-1, dec=-91):
     rspfilename = rspfilename.replace("pha", "fits")
     outfile = os.path.join(dir_dict["response"], rspfilename)
     attfile = data_dict["Att"]
-    merspgen_cmd = "merspgen %s %s %s %s %s clobber=yes"%(phafile, outfile, attfile, str(ra), str(dec))
+    merspgen_cmd = 'merspgen phafile="%s" outfile="%s" attfile="%s" ra="%s" dec="%s" clobber=yes'%(phafile, outfile, attfile, str(ra), str(dec))
     return merspgen_cmd
 
 def lerspgen(data_dict, dir_dict, ra=-1, dec=-91):
@@ -399,7 +399,7 @@ def lerspgen(data_dict, dir_dict, ra=-1, dec=-91):
     outfile = os.path.join(dir_dict["response"], rspfilename)
     attfile = data_dict["Att"]
     tempfile = data_dict["TH"]
-    lerspgen_cmd = "lerspgen %s %s %s %s %s %s clobber=yes"%(phafile, outfile, attfile, tempfile, str(ra), str(dec))
+    lerspgen_cmd = 'lerspgen phafile="%s" outfile="%s" attfile="%s" tempfile="%s" ra="%s" dec="%s" clobber=yes'%(phafile, outfile, attfile, tempfile, str(ra), str(dec))
     return lerspgen_cmd
 
 def hebkgmap(data_dict, dir_dict, flag='lc', minPI=25, maxPI=100):
