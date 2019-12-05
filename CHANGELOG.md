@@ -1,3 +1,8 @@
+### 1.0.1： December 05, 2019
+* lerspgen: modify the input method !6623bb030b9f3a8292068da3762940dd0d0c088f
+* merspgen: modify the input method !6623bb030b9f3a8292068da3762940dd0d0c088f
+* herspgen: modify the input method !6623bb030b9f3a8292068da3762940dd0d0c088f
+
 ### 0.1.1:  November 26, 2019
 * legtigen: modify the output name. !9095e6896260bb4b11b65794528f83e98cf7736d
 * megtigen: modify the output name. !9095e6896260bb4b11b65794528f83e98cf7736d
