@@ -167,7 +167,7 @@ def hepical(data_dict, dir_dict):
     evtfile = data_dict["Evt"]
     prefix = get_expID(data_dict)
     outfile = os.path.join(dir_dict["tmp"], prefix+"_HE_pi.fits")
-    hepical_cmd = 'hepical evtfile="%s" outfile="%s" clobber=yes'%(evtfile, outfile)
+    hepical_cmd = 'hepical evtfile="%s" outfile="%s" minpulsewidth=54 maxpulsewidth=70 clobber=yes'%(evtfile, outfile)
     return hepical_cmd
 
 def mepical(data_dict, dir_dict):
@@ -330,9 +330,14 @@ def hespecgen(data_dict, dir_dict):
     screenfile  = os.path.join(dir_dict["clean"], prefix+"_HE_screen.fits")
     outfile     = os.path.join(dir_dict["spectra"], prefix+"_HE_spec")
     deadfile    = data_dict["DTime"]
+    #NOTE:2.04 update
+    #hespecgen_cmd = 'hespecgen evtfile="%s" outfile="%s" '\
+    #        'deadfile="%s" userdetid='\
+    #        '"0;1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;17" eventtype=1 starttime=0 '\
+    #        'stoptime=0 minPI=0 maxPI=255 clobber=yes'%(screenfile, outfile, deadfile)
     hespecgen_cmd = 'hespecgen evtfile="%s" outfile="%s" '\
             'deadfile="%s" userdetid='\
-            '"0;1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;17" eventtype=1 starttime=0 '\
+            '"0-15,17" eventtype=1 starttime=0 '\
             'stoptime=0 minPI=0 maxPI=255 clobber=yes'%(screenfile, outfile, deadfile)
     return hespecgen_cmd
 
@@ -365,11 +370,11 @@ def lespecgen(data_dict, dir_dict):
 def herspgen(data_dict, dir_dict, ra=-1, dec=-91):
     herspgen_cmd = []
     prefix = get_expID(data_dict)
-    for i in range(18):
-        if i == 16:
-            continue
-        else:
-            phafile = os.path.join(dir_dict["spectra"], prefix+"_HE_spec_g%s_%s.pha"%(str(i),str(i)))
+
+    #NOTE:2.04 update
+    #phafile = os.path.join(dir_dict["spectra"], prefix+"_HE_spec_g%s_%s.pha"%(str(i),str(i)))
+    phafile_list = glob.glob(os.path.join(dir_dict["spectra"], prefix+"_HE_spec_g*.pha"))
+    for phafile in phafile_list:
         phafilename = os.path.basename(phafile)
         rspfilename = phafilename.replace("spec", "rsp")
         rspfilename = rspfilename.replace("pha", "fits")
@@ -377,6 +382,19 @@ def herspgen(data_dict, dir_dict, ra=-1, dec=-91):
         attfile = data_dict["Att"]
         rsp_cmd = 'herspgen phafile="%s" outfile="%s" attfile="%s" ra="%s" dec="%s" clobber=yes'%(phafile, outfile, attfile, str(ra), str(dec))
         herspgen_cmd.append(rsp_cmd)
+
+#    for i in range(18):
+#        if i == 16:
+#            continue
+#        else:
+#            phafile = os.path.join(dir_dict["spectra"], prefix+"_HE_spec_g%s_%s.pha"%(str(i),str(i)))
+#        phafilename = os.path.basename(phafile)
+#        rspfilename = phafilename.replace("spec", "rsp")
+#        rspfilename = rspfilename.replace("pha", "fits")
+#        outfile = os.path.join(dir_dict["response"], rspfilename)
+#        attfile = data_dict["Att"]
+#        rsp_cmd = 'herspgen phafile="%s" outfile="%s" attfile="%s" ra="%s" dec="%s" clobber=yes'%(phafile, outfile, attfile, str(ra), str(dec))
+#        herspgen_cmd.append(rsp_cmd)
     return herspgen_cmd
 
 def merspgen(data_dict, dir_dict, ra=-1, dec=-91):
@@ -558,9 +576,9 @@ def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91, bary_flag=False
         #hebkgmap for lc
         hebkgmap_cmd = hebkgmap(rawfiles, outdirs, flag="lc", minPI=26, maxPI=120)
         pipeline_commands = pipeline_commands + hebkgmap_cmd
-        #hhe_spec2pi for spec
-        hhe_spec2pi_cmd = hhe_spec2pi(rawfiles, outdirs)
-        pipeline_commands = pipeline_commands + hhe_spec2pi_cmd
+#        #hhe_spec2pi for spec
+#        hhe_spec2pi_cmd = hhe_spec2pi(rawfiles, outdirs)
+#        pipeline_commands = pipeline_commands + hhe_spec2pi_cmd
         if bary_flag:
             hxbary_cmd = hxbary(rawfiles, outdirs, ra=ra, dec=dec, instrument=instrument)
             pipeline_commands.append(hxbary_cmd)
