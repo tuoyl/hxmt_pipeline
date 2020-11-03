@@ -4,7 +4,7 @@
 HXMT pipeline, run python hpipeline.py -h for help.
 
 NOTE: this script is suitable for HXMTDAS v2.01, v2.02,
-check out "http://code.ihep.ac.cn/tuoyl/hxmt_pipeline" for details.
+check out "http://code.ihep.ac.cn/hxmthsdc/hxmt_pipeline" for details.
 '''
 import argparse
 import os
@@ -139,8 +139,45 @@ def get_dir(product_dir, instrument="HE"):
         dir_dict= dict(zip(dir_name, dir_content))
         return dir_dict
 
-class pipelineError(Exception):
-    pass
+def clean_data(data_dict, dir_dict, **kw):
+    prefix = get_expID(data_dict)
+    rmfile = []
+    rmfile.append(os.path.join(dir_dict["tmp"], prefix+"_HE_pi.fits"))
+    rmfile.append(os.path.join(dir_dict["tmp"], prefix+"_ME_pi.fits"))
+    rmfile.append(os.path.join(dir_dict["tmp"], prefix+"_LE_pi.fits"))
+    rmfile.append(os.path.join(dir_dict["tmp"], prefix+"_ME_grade.fits"))
+    rmfile.append(os.path.join(dir_dict["tmp"], prefix+"_LE_recon.fits"))
+    rmfile.append(os.path.join(dir_dict["lightcurves"], prefix+"_HE_lc.txt"))
+    rmfile.append(os.path.join(dir_dict["spectra"], prefix+"_HE_spec.txt")   )
+    rmfile.append(os.path.join(dir_dict["lightcurves"], prefix+"_ME_lc.txt") )
+    rmfile.append(os.path.join(dir_dict["spectra"], prefix+"_ME_spec.txt")   )
+    rmfile.append(os.path.join(dir_dict["lightcurves"], prefix+"_LE_lc.txt") )
+    rmfile.append(os.path.join(dir_dict["spectra"], prefix+"_LE_spec.txt")   )
+    if kw['version'] == '2.02':
+        rmfile.append(os.path.join(dir_dict["spectra"], prefix+"_HE_merge_speclist.txt"))
+        rmfile.append(os.path.join(dir_dict["spectra"], prefix+"_HE_merge_bkglist.txt"))
+        rmfile.append(os.path.join(dir_dict["response"], prefix+"_HE_merge_rsplist.txt"))
+    clean_data_cmd = 'rm -rf ' + ' '.join(rmfile)
+    if kw['parallel_flag']:
+        pfiles = os.path.join(dir_dict['tmp'], prefix+".tmp", "pfiles")
+        clean_data_cmd = clean_data_cmd + ';rm -rf ' + pfiles
+    return clean_data_cmd
+
+def parallel(data_dict, dir_dict, **kw):
+    """
+    reference: https://heasarc.gsfc.nasa.gov/lheasoft/scripting.html
+
+    """
+    parallel_cmd = []
+    prefix = get_expID(data_dict)
+    pfile_dir = os.path.join(dir_dict['tmp'], prefix+".tmp", "pfiles")
+    if not os.path.isdir(pfile_dir):
+        os.system('mkdir -p ' + pfile_dir)
+    parallel_cmd.append('export PFILES="%s;$HEADAS/syspfiles"'%(pfile_dir))
+    parallel_cmd.append("export HEADASNOQUERY=")
+    parallel_cmd.append("export HEADASPROMPT=/dev/null")
+    return parallel_cmd
+
 
 def get_rawdata(data_dir, instrument="HE"):
     #read filenames
@@ -659,6 +696,8 @@ def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91, bary_flag=False
     outdirs  = get_dir(product_dir, instrument=instrument)
 
     pipeline_commands = []
+    if kw['parallel_flag']:
+        pipeline_commands = pipeline_commands + parallel(rawfiles, outdirs)
     if instrument == "HE":
         #hepical
         hepical_cmd = hepical(rawfiles, outdirs)
@@ -679,7 +718,11 @@ def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91, bary_flag=False
             HE_LC_EMAX = kw['he_lc_emax']
         else:
             HE_LC_EMAX = 250
-        helcgen_cmd = helcgen(rawfiles, outdirs, minE=HE_LC_EMIN, maxE=HE_LC_EMAX, version=version)
+        if kw['he_lc_binsize']:
+            HE_LC_BINSIZE = kw['he_lc_binsize']
+        else:
+            HE_LC_BINSIZE = 1
+        helcgen_cmd = helcgen(rawfiles, outdirs, binsize=HE_LC_BINSIZE, minE=HE_LC_EMIN, maxE=HE_LC_EMAX, version=version)
         pipeline_commands.append(helcgen_cmd)
         #hespecgen
         hespecgen_cmd = hespecgen(rawfiles, outdirs, version=version)
@@ -726,7 +769,11 @@ def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91, bary_flag=False
             ME_LC_EMAX = kw['me_lc_emax']
         else:
             ME_LC_EMAX = 35
-        melcgen_cmd = melcgen(rawfiles, outdirs, minE=ME_LC_EMIN, maxE=ME_LC_EMAX)
+        if kw['me_lc_binsize']:
+            ME_LC_BINSIZE = kw['me_lc_binsize']
+        else:
+            ME_LC_BINSIZE = 1
+        melcgen_cmd = melcgen(rawfiles, outdirs, binsize=ME_LC_BINSIZE, minE=ME_LC_EMIN, maxE=ME_LC_EMAX)
         pipeline_commands.append(melcgen_cmd)
         #mespecgen
         mespecgen_cmd = mespecgen(rawfiles, outdirs)
@@ -767,7 +814,11 @@ def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91, bary_flag=False
             LE_LC_EMAX = kw['le_lc_emax']
         else:
             LE_LC_EMAX = 10 
-        lelcgen_cmd = lelcgen(rawfiles, outdirs, minE=LE_LC_EMIN, maxE=LE_LC_EMAX)
+        if kw['le_lc_binsize']:
+            LE_LC_BINSIZE = kw['le_lc_binsize']
+        else:
+            LE_LC_BINSIZE = 1
+        lelcgen_cmd = lelcgen(rawfiles, outdirs, binsize=LE_LC_BINSIZE, minE=LE_LC_EMIN, maxE=LE_LC_EMAX)
         pipeline_commands.append(lelcgen_cmd)
         #lespecgen
         lespecgen_cmd = lespecgen(rawfiles, outdirs)
@@ -785,6 +836,9 @@ def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91, bary_flag=False
         if bary_flag:
             hxbary_cmd = hxbary(rawfiles, outdirs, ra=ra, dec=dec, instrument=instrument)
             pipeline_commands.append(hxbary_cmd)
+        if kw['clean_flag']:
+            clean_data_cmd = clean_data(rawfiles, outdirs, version=version, parallel_flag=parallel_flag)
+            pipeline_commands.append(clean_data_cmd)
     return pipeline_commands
 
 if __name__ == "__main__":
@@ -799,18 +853,18 @@ if __name__ == "__main__":
         BOLD = '\033[1m'
         UNDERLINE = '\033[4m'
 
-    NOTICE = f"""
+    NOTICE = """
 
     -------------------------------
     Notice : 
         HXMTsoft pipeline. Using this program, you can generate a shell script that 
         contains all the commands you need to complete the HXMT data processing.
 
-    {bcolors.WARNING}Warning : !!! The software is currently used to process hxmtsoft version 2.04, 
-        if you need to process version 2.02 of hxmtsoft, use the --version parameter to specify the hxmtsoft version!!!{bcolors.ENDC}
+    %sWarning : !!! The software is currently used to process hxmtsoft version 2.04, 
+        if you need to process version 2.02 of hxmtsoft, use the --version parameter to specify the hxmtsoft version!!!%s
     -------------------------------
 
-    """
+    """%(bcolors.WARNING, bcolors.ENDC)
     # input arguments
     #TODO:finish documentary
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -826,21 +880,35 @@ if __name__ == "__main__":
     parser.add_argument("-r","--ra",help="right ascension of barycentering correction (unit: degree)",type=float)
     parser.add_argument("-d","--dec",help="declination of barycentering correction (unit: degree)",type=float)
     parser.add_argument("-v","--version",help="the pipeline is compatible with HXMTsoft version 2.04 (default), if --version 2.02 , the pipeline is compatible with HXMTsoft v2.02", type=str)
-    parser.add_argument("-LE_LC_EMIN",help="lower limits for LE lightcurve (unit: keV)",type=float)
-    parser.add_argument("-LE_LC_EMAX",help="upper limits for LE lightcurve (unit: keV)",type=float)
-    parser.add_argument("-LE_LC_BINSIZE",help="binsize LE lightcurve (unit: second)",type=float)
-    parser.add_argument("-ME_LC_EMIN",help="lower limits for ME lightcurve (unit: keV)",type=float)
-    parser.add_argument("-ME_LC_EMAX",help="upper limits for ME lightcurve (unit: keV)",type=float)
-    parser.add_argument("-ME_LC_BINSIZE",help="binsize ME lightcurve (unit: second)",type=float)
-    parser.add_argument("-HE_LC_EMIN",help="lower limits for HE lightcurve (unti: keV)",type=float)
-    parser.add_argument("-HE_LC_EMAX",help="upper limits for HE lightcurve (unti: keV)",type=float)
-    parser.add_argument("-HE_LC_BINSIZE",help="binsize HE lightcurve (unit: second)",type=float)
+    parser.add_argument("--LE_LC_EMIN",help="lower limits for LE lightcurve (unit: keV)",type=float)
+    parser.add_argument("--LE_LC_EMAX",help="upper limits for LE lightcurve (unit: keV)",type=float)
+    parser.add_argument("--LE_LC_BINSIZE",help="binsize LE lightcurve (unit: second)",type=float)
+    parser.add_argument("--ME_LC_EMIN",help="lower limits for ME lightcurve (unit: keV)",type=float)
+    parser.add_argument("--ME_LC_EMAX",help="upper limits for ME lightcurve (unit: keV)",type=float)
+    parser.add_argument("--ME_LC_BINSIZE",help="binsize ME lightcurve (unit: second)",type=float)
+    parser.add_argument("--HE_LC_EMIN",help="lower limits for HE lightcurve (unti: keV)",type=float)
+    parser.add_argument("--HE_LC_EMAX",help="upper limits for HE lightcurve (unti: keV)",type=float)
+    parser.add_argument("--HE_LC_BINSIZE",help="binsize HE lightcurve (unit: second)",type=float)
+
+    parser.add_argument("-c", "--clean", action="store_true", help="delete the events file generated in process, keep screen file only (default keeps all)")
+    parser.add_argument("-p", "--parallel", action="store_true", help="setup environmental variables for parallel processing")
     args = parser.parse_args()
 
     if args.version:
         version = args.version
     else:
         version = '2.04'
+
+    if args.clean:
+        clean_flag = True
+    else:
+        clean_flag = False
+
+    if args.parallel:
+        parallel_flag = True
+    else:
+        parallel_flag = False
+
 
     if args.inputlist:
         inputfile = open(args.inputlist)
@@ -855,49 +923,58 @@ if __name__ == "__main__":
                 ra = args.ra
                 dec = args.dec
                 try:
-                    lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="HE", bary_flag=True, 
+                    lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="HE", bary_flag=True, clean_flag=clean_flag, parallel_flag=parallel_flag, 
                             version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
                             me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
-                            he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
-                    lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="ME", bary_flag=True,
+                            he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX, 
+                            he_lc_binsize=args.HE_LC_BINSIZE, me_lc_binsize=args.ME_LC_BINSIZE, le_lc_binsize=args.LE_LC_BINSIZE)
+                    lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="ME", bary_flag=True, clean_flag=clean_flag, parallel_flag=parallel_flag, 
                             version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
                             me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
-                            he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
-                    lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="LE", bary_flag=True, 
+                            he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX,
+                            he_lc_binsize=args.HE_LC_BINSIZE, me_lc_binsize=args.ME_LC_BINSIZE, le_lc_binsize=args.LE_LC_BINSIZE)
+                    lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="LE", bary_flag=True, clean_flag=clean_flag, parallel_flag=parallel_flag, 
                             version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
                             me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
-                            he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
+                            he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX,
+                            he_lc_binsize=args.HE_LC_BINSIZE, me_lc_binsize=args.ME_LC_BINSIZE, le_lc_binsize=args.LE_LC_BINSIZE)
                 except:continue
             else:
                 if args.ra or args.dec:
                     try:
-                        lines = lines + main(data_dir, product_dir,ra=ra, dec=dec, instrument="HE", bary_flag=False, 
+                        lines = lines + main(data_dir, product_dir,ra=ra, dec=dec, instrument="HE", bary_flag=False, clean_flag=clean_flag, parallel_flag=parallel_flag, 
                                 version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
                                 me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
-                                he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
-                        lines = lines + main(data_dir, product_dir,ra=ra, dec=dec, instrument="ME", bary_flag=False, 
+                                he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX,
+                                he_lc_binsize=args.HE_LC_BINSIZE, me_lc_binsize=args.ME_LC_BINSIZE, le_lc_binsize=args.LE_LC_BINSIZE)
+                        lines = lines + main(data_dir, product_dir,ra=ra, dec=dec, instrument="ME", bary_flag=False, clean_flag=clean_flag, parallel_flag=parallel_flag, 
                                 version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
                                 me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
-                                he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
-                        lines = lines + main(data_dir, product_dir,ra=ra, dec=dec, instrument="LE", bary_flag=False,
+                                he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX,
+                                he_lc_binsize=args.HE_LC_BINSIZE, me_lc_binsize=args.ME_LC_BINSIZE, le_lc_binsize=args.LE_LC_BINSIZE)
+                        lines = lines + main(data_dir, product_dir,ra=ra, dec=dec, instrument="LE", bary_flag=False, clean_flag=clean_flag, parallel_flag=parallel_flag, 
                                 version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
                                 me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
-                                he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
+                                he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX,
+                                he_lc_binsize=args.HE_LC_BINSIZE, me_lc_binsize=args.ME_LC_BINSIZE, le_lc_binsize=args.LE_LC_BINSIZE)
                     except:continue
                 else:
                     try:
-                        lines = lines + main(data_dir, product_dir, instrument="HE", bary_flag=False, 
+                        lines = lines + main(data_dir, product_dir, instrument="HE", bary_flag=False, clean_flag=clean_flag, parallel_flag=parallel_flag, 
                                 version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
                                 me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
-                                he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
-                        lines = lines + main(data_dir, product_dir, instrument="ME", bary_flag=False, 
+                                he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX,
+                                he_lc_binsize=args.HE_LC_BINSIZE, me_lc_binsize=args.ME_LC_BINSIZE, le_lc_binsize=args.LE_LC_BINSIZE)
+                        lines = lines + main(data_dir, product_dir, instrument="ME", bary_flag=False, clean_flag=clean_flag, parallel_flag=parallel_flag, 
                                 version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
                                 me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
-                                he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
-                        lines = lines + main(data_dir, product_dir, instrument="LE", bary_flag=False,
+                                he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX,
+                                he_lc_binsize=args.HE_LC_BINSIZE, me_lc_binsize=args.ME_LC_BINSIZE, le_lc_binsize=args.LE_LC_BINSIZE)
+                        lines = lines + main(data_dir, product_dir, instrument="LE", bary_flag=False, clean_flag=clean_flag, parallel_flag=parallel_flag, 
                                 version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
                                 me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
-                                he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
+                                he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX,
+                                he_lc_binsize=args.HE_LC_BINSIZE, me_lc_binsize=args.ME_LC_BINSIZE, le_lc_binsize=args.LE_LC_BINSIZE)
                     except:continue
         if args.bash:
             bashfile  = args.bash
@@ -905,9 +982,10 @@ if __name__ == "__main__":
                 for i in lines:
                     wrt_str = "%s\n"%(i)
                     fout.write(wrt_str)
+                
             print('\n')
             print("     you have successfully created a pipeline script: %s"%bashfile)
-            print('     Run shell command ". %s" '%bashfile)
+            print('     Run shell command "source %s" '%bashfile)
             print('\n')
         else:
             bashfile  = ""
@@ -915,7 +993,7 @@ if __name__ == "__main__":
                 print(i)
 
     elif args.input == None:
-        print('ERROR: no inputs. "python he_pipeline.py -h" see help')
+        print('ERROR: no inputs. "hpipeline -h" see help')
     else:
         data_dir = args.input
         product_dir = args.output
@@ -928,46 +1006,55 @@ if __name__ == "__main__":
         if args.hxbary:
             ra = args.ra
             dec = args.dec
-            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec,instrument="HE",bary_flag=True, 
+            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec,instrument="HE",bary_flag=True, clean_flag=clean_flag, parallel_flag=parallel_flag,
+                    version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX,                                  
+                    me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,                                                   
+                    he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX,                                                   
+                    he_lc_binsize=args.HE_LC_BINSIZE, me_lc_binsize=args.ME_LC_BINSIZE, le_lc_binsize=args.LE_LC_BINSIZE)     
+            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec,instrument="ME",bary_flag=True, clean_flag=clean_flag, parallel_flag=parallel_flag,
+                    version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX,                                 
+                    me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,                                                  
+                    he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX,                                                  
+                    he_lc_binsize=args.HE_LC_BINSIZE, me_lc_binsize=args.ME_LC_BINSIZE, le_lc_binsize=args.LE_LC_BINSIZE)    
+            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec,instrument="LE",bary_flag=True, clean_flag=clean_flag, parallel_flag=parallel_flag,
                     version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
                     me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
-                    he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
-            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec,instrument="ME",bary_flag=True, 
-                    version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
-                    me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
-                    he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
-            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec,instrument="LE",bary_flag=True,
-                    version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
-                    me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
-                    he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
+                    he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX,
+                    he_lc_binsize=args.HE_LC_BINSIZE, me_lc_binsize=args.ME_LC_BINSIZE, le_lc_binsize=args.LE_LC_BINSIZE)
         elif args.ra or args.dec:
             ra = args.ra
             dec = args.dec
-            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="HE",bary_flag=False, 
+            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="HE",bary_flag=False, clean_flag=clean_flag, parallel_flag=parallel_flag, 
                     version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
                     me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
-                    he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
-            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="ME",bary_flag=False,
+                    he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX,
+                    he_lc_binsize=args.HE_LC_BINSIZE, me_lc_binsize=args.ME_LC_BINSIZE, le_lc_binsize=args.LE_LC_BINSIZE)
+            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="ME",bary_flag=False, clean_flag=clean_flag, parallel_flag=parallel_flag, 
                     version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
                     me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
-                    he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
-            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="LE",bary_flag=False, 
+                    he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX,
+                    he_lc_binsize=args.HE_LC_BINSIZE, me_lc_binsize=args.ME_LC_BINSIZE, le_lc_binsize=args.LE_LC_BINSIZE)
+            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="LE",bary_flag=False, clean_flag=clean_flag, parallel_flag=parallel_flag, 
                     version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
                     me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
-                    he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
+                    he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX,
+                    he_lc_binsize=args.HE_LC_BINSIZE, me_lc_binsize=args.ME_LC_BINSIZE, le_lc_binsize=args.LE_LC_BINSIZE)
         else:
-            lines = lines + main(data_dir, product_dir, instrument="HE", bary_flag=False, 
+            lines = lines + main(data_dir, product_dir, instrument="HE", bary_flag=False, clean_flag=clean_flag, parallel_flag=parallel_flag, 
                     version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
                     me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
-                    he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
-            lines = lines + main(data_dir, product_dir, instrument="ME", bary_flag=False,
+                    he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX,
+                    he_lc_binsize=args.HE_LC_BINSIZE, me_lc_binsize=args.ME_LC_BINSIZE, le_lc_binsize=args.LE_LC_BINSIZE)
+            lines = lines + main(data_dir, product_dir, instrument="ME", bary_flag=False, clean_flag=clean_flag, parallel_flag=parallel_flag, 
                     version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
                     me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
-                    he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
-            lines = lines + main(data_dir, product_dir, instrument="LE", bary_flag=False, 
+                    he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX,
+                    he_lc_binsize=args.HE_LC_BINSIZE, me_lc_binsize=args.ME_LC_BINSIZE, le_lc_binsize=args.LE_LC_BINSIZE)
+            lines = lines + main(data_dir, product_dir, instrument="LE", bary_flag=False, clean_flag=clean_flag, parallel_flag=parallel_flag, 
                     version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
                     me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
-                    he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
+                    he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX,
+                    he_lc_binsize=args.HE_LC_BINSIZE, me_lc_binsize=args.ME_LC_BINSIZE, le_lc_binsize=args.LE_LC_BINSIZE)
 
         if bashfile == "":
             for i in lines:
@@ -979,5 +1066,5 @@ if __name__ == "__main__":
                     fout.write(wrt_str)
             print('\n')
             print("     you have successfully created a pipeline script: %s"%bashfile)
-            print('     Run shell command ". %s" '%bashfile)
+            print('     Run shell command "source %s" '%bashfile)
             print('\n')
