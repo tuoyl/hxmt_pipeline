@@ -25,9 +25,9 @@ usage: hpipeline.py [-h] [-i INPUT] [-I INPUTLIST] [-o OUTPUT] [-O OUTPUTLIST]
         HXMTsoft pipeline. Using this program, you can generate a shell script that
         contains all the commands you need to complete the HXMT data processing.
 
-        !!! The software is currently used to process hxmtsoft version 2.04,
+	<span style="color: green"> !!! The software is currently used to process hxmtsoft version 2.04,
         if you need to process version 2.02 of hxmtsoft, use the --version parameter
-        use -h parameter to see detail!!!
+        use -h parameter to see detail!!! </span>
     -------------------------------
 
     Example: hpipeline -i /DATA_PATH/ExpID/ -o /OUTPUT_PATH/ --hxbary -r 83.63322083 -d 22.014461 -b bash-script-name.sh
@@ -85,8 +85,8 @@ optional arguments:
 - ```--ME_LC_EMAX```: (optional) 选择 ME 光变曲线的能段上限(keV)
 - ```--HE_LC_EMIN```: (optional) 选择 HE 光变曲线的能段下限(keV)
 - ```--HE_LC_EMAX```: (optional) 选择 HE 光变曲线的能段上限(keV)
-
-
-  
-
-
+- ```--HE_LC_BINSIZE```: (optional) 设置 HE 光变曲线的时间 bin (s)
+- ```--ME_LC_BINSIZE```: (optional) 设置 ME 光变曲线的时间 bin (s)
+- ```--LE_LC_BINSIZE```: (optional) 设置 LE 光变曲线的时间 bin (s)
+- ```--clean```: (optional) 清除中间过程产生的事例文件(*pi*, *recon*, *grade*)
+- ```--parallel```: (optional) 设置脚本并行的环境变量
