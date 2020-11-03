@@ -325,20 +325,31 @@ def lelcgen(data_dict, dir_dict, binsize=1, minPI=25, maxPI=100):
                     screenfile, outfile, userdetid, str(binsize), str(minPI), str(maxPI))
     return lelcgen_cmd
 
-def hespecgen(data_dict, dir_dict):
+def hespecgen(data_dict, dir_dict, **kw):
     prefix = get_expID(data_dict)
     screenfile  = os.path.join(dir_dict["clean"], prefix+"_HE_screen.fits")
     outfile     = os.path.join(dir_dict["spectra"], prefix+"_HE_spec")
     deadfile    = data_dict["DTime"]
-    #NOTE:2.04 update
-    #hespecgen_cmd = 'hespecgen evtfile="%s" outfile="%s" '\
-    #        'deadfile="%s" userdetid='\
-    #        '"0;1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;17" eventtype=1 starttime=0 '\
-    #        'stoptime=0 minPI=0 maxPI=255 clobber=yes'%(screenfile, outfile, deadfile)
-    hespecgen_cmd = 'hespecgen evtfile="%s" outfile="%s" '\
-            'deadfile="%s" userdetid='\
-            '"0-15,17" eventtype=1 starttime=0 '\
-            'stoptime=0 minPI=0 maxPI=255 clobber=yes'%(screenfile, outfile, deadfile)
+    if 'version' in kw:
+        print(type(kw['version']), kw['version'])
+        if kw['version'] == '2.04':
+        #NOTE:2.04 update
+            hespecgen_cmd = 'hespecgen evtfile="%s" outfile="%s" '\
+                    'deadfile="%s" userdetid='\
+                    '"0-15,17" eventtype=1 starttime=0 '\
+                    'stoptime=0 minPI=0 maxPI=255 clobber=yes'%(screenfile, outfile, deadfile)
+        elif kw['version'] == '2.02':
+            hespecgen_cmd = 'hespecgen evtfile="%s" outfile="%s" '\
+                    'deadfile="%s" userdetid='\
+                    '"0;1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;17" eventtype=1 starttime=0 '\
+                    'stoptime=0 minPI=0 maxPI=255 clobber=yes'%(screenfile, outfile, deadfile)
+            print(hespecgen_cmd)
+    else:
+        # default is v2.04
+        hespecgen_cmd = 'hespecgen evtfile="%s" outfile="%s" '\
+                'deadfile="%s" userdetid='\
+                '"0-15,17" eventtype=1 starttime=0 '\
+                'stoptime=0 minPI=0 maxPI=255 clobber=yes'%(screenfile, outfile, deadfile)
     return hespecgen_cmd
 
 def mespecgen(data_dict, dir_dict):
@@ -367,14 +378,41 @@ def lespecgen(data_dict, dir_dict):
 
 
 
-def herspgen(data_dict, dir_dict, ra=-1, dec=-91):
+def herspgen(data_dict, dir_dict, ra=-1, dec=-91, **kw):
     herspgen_cmd = []
     prefix = get_expID(data_dict)
 
-    #NOTE:2.04 update
-    #phafile = os.path.join(dir_dict["spectra"], prefix+"_HE_spec_g%s_%s.pha"%(str(i),str(i)))
-    phafile_list = glob.glob(os.path.join(dir_dict["spectra"], prefix+"_HE_spec_g*.pha"))
-    for phafile in phafile_list:
+    if 'version' in kw:
+        if kw['version'] == '2.04':
+            # v2.04 update: spectrum file is fixed to g0-17
+            phafile = os.path.join(dir_dict["spectra"], prefix+"_HE_spec_g0_0-17.pha")
+            phafilename = os.path.basename(phafile)
+            rspfilename = phafilename.replace("spec", "rsp")
+            rspfilename = rspfilename.replace("pha", "fits")
+            outfile = os.path.join(dir_dict["response"], rspfilename)
+            attfile = data_dict["Att"]
+            rsp_cmd = 'herspgen phafile="%s" outfile="%s" attfile="%s" ra="%s" dec="%s" clobber=yes'%(phafile, outfile, attfile, str(ra), str(dec))
+            herspgen_cmd.append(rsp_cmd)
+        elif kw['version'] == '2.02':
+            #phafile = os.path.join(dir_dict["spectra"], prefix+"_HE_spec_g%s_%s.pha"%(str(i),str(i)))
+            #phafile_list = glob.glob(os.path.join(dir_dict["spectra"], prefix+"_HE_spec*.pha"))
+            for i in range(18):
+                if i == 16:
+                    continue
+                else:
+                    phafile = os.path.join(dir_dict["spectra"], prefix+"_HE_spec_g%s_%s.pha"%(str(i),str(i)))
+                phafilename = os.path.basename(phafile)
+                rspfilename = phafilename.replace("spec", "rsp")
+                rspfilename = rspfilename.replace("pha", "fits")
+                outfile = os.path.join(dir_dict["response"], rspfilename)
+                attfile = data_dict["Att"]
+                rsp_cmd = 'herspgen phafile="%s" outfile="%s" attfile="%s" ra="%s" dec="%s" clobber=yes'%(phafile, outfile, attfile, str(ra), str(dec))
+                herspgen_cmd.append(rsp_cmd)
+
+    else:
+        #NOTE: default is 2.04
+        phafile = os.path.join(dir_dict["spectra"], prefix+"_HE_spec_g0_0-17.pha")
+    
         phafilename = os.path.basename(phafile)
         rspfilename = phafilename.replace("spec", "rsp")
         rspfilename = rspfilename.replace("pha", "fits")
@@ -383,18 +421,6 @@ def herspgen(data_dict, dir_dict, ra=-1, dec=-91):
         rsp_cmd = 'herspgen phafile="%s" outfile="%s" attfile="%s" ra="%s" dec="%s" clobber=yes'%(phafile, outfile, attfile, str(ra), str(dec))
         herspgen_cmd.append(rsp_cmd)
 
-#    for i in range(18):
-#        if i == 16:
-#            continue
-#        else:
-#            phafile = os.path.join(dir_dict["spectra"], prefix+"_HE_spec_g%s_%s.pha"%(str(i),str(i)))
-#        phafilename = os.path.basename(phafile)
-#        rspfilename = phafilename.replace("spec", "rsp")
-#        rspfilename = rspfilename.replace("pha", "fits")
-#        outfile = os.path.join(dir_dict["response"], rspfilename)
-#        attfile = data_dict["Att"]
-#        rsp_cmd = 'herspgen phafile="%s" outfile="%s" attfile="%s" ra="%s" dec="%s" clobber=yes'%(phafile, outfile, attfile, str(ra), str(dec))
-#        herspgen_cmd.append(rsp_cmd)
     return herspgen_cmd
 
 def merspgen(data_dict, dir_dict, ra=-1, dec=-91):
@@ -509,7 +535,7 @@ def hxbary(data_dict, dir_dict, ra=-1, dec=-91, instrument="HE"):
             screenfile, orbitfile, str(ra), str(dec))
     return hxbary_cmd
 
-def hhe_spec2pi(data_dict, dir_dict):
+def hhe_spec2pi(data_dict, dir_dict, **kw):
     hhe_spec2pi_cmd = []
     prefix = get_expID(data_dict)
     spec_files = os.path.join(dir_dict["spectra"], prefix+"_HE_spec_g*.pha")
@@ -544,7 +570,7 @@ def get_expID(data_dict):
     exp_id = exp_id[0]
     return exp_id
 
-def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91, bary_flag=False):
+def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91, bary_flag=False, version=2.04):
     # read raw data
     rawfiles = get_rawdata(data_dir,instrument=instrument)
     outdirs  = get_dir(product_dir, instrument=instrument)
@@ -564,10 +590,10 @@ def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91, bary_flag=False
         helcgen_cmd = helcgen(rawfiles, outdirs, minPI=26, maxPI=120)
         pipeline_commands.append(helcgen_cmd)
         #hespecgen
-        hespecgen_cmd = hespecgen(rawfiles, outdirs)
+        hespecgen_cmd = hespecgen(rawfiles, outdirs, version=version)
         pipeline_commands.append(hespecgen_cmd)
         #herspgen
-        herspgen_cmd = herspgen(rawfiles, outdirs, ra=ra, dec=dec)
+        herspgen_cmd = herspgen(rawfiles, outdirs, ra=ra, dec=dec, version=version)
         # herspgen is a list
         pipeline_commands = pipeline_commands + herspgen_cmd
         #hebkgmap for spec
@@ -576,9 +602,12 @@ def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91, bary_flag=False
         #hebkgmap for lc
         hebkgmap_cmd = hebkgmap(rawfiles, outdirs, flag="lc", minPI=26, maxPI=120)
         pipeline_commands = pipeline_commands + hebkgmap_cmd
-#        #hhe_spec2pi for spec
-#        hhe_spec2pi_cmd = hhe_spec2pi(rawfiles, outdirs)
-#        pipeline_commands = pipeline_commands + hhe_spec2pi_cmd
+
+        if version == 2.02:
+            #hhe_spec2pi for spec
+            hhe_spec2pi_cmd = hhe_spec2pi(rawfiles, outdirs)
+            pipeline_commands = pipeline_commands + hhe_spec2pi_cmd
+
         if bary_flag:
             hxbary_cmd = hxbary(rawfiles, outdirs, ra=ra, dec=dec, instrument=instrument)
             pipeline_commands.append(hxbary_cmd)
@@ -649,10 +678,22 @@ def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91, bary_flag=False
     return pipeline_commands
 
 if __name__ == "__main__":
+    NOTICE = """
+    -------------------------------
+    Notice : 
+        HXMTsoft pipeline. Using this program, you can generate a shell script that 
+        contains all the commands you need to complete the HXMT data processing.
+
+        !!! The software is currently used to process hxmtsoft version 2.04, 
+        if you need to process version 2.02 of hxmtsoft, use the --version parameter 
+        use -h parameter to see detail!!!
+    -------------------------------
+
+    """
     # input arguments
     #TODO:finish documentary
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
-            description='Example: python he_pipeline.py -i /DATA_PATH/ExpID/ -o /OUTPUT_PATH/ --hxbary -r 83.63322083 -d 22.014461 -b bash-script-name.sh')
+            description=NOTICE + 'Example: hpipeline -i /DATA_PATH/ExpID/ -o /OUTPUT_PATH/ --hxbary -r 83.63322083 -d 22.014461 -b bash-script-name.sh')
     parser.add_argument("-i","--input",help="data archived path")
     parser.add_argument("-I","--inputlist",help="data archived path in list",type=str)
     parser.add_argument("-o","--output",help="products archived path")
@@ -661,7 +702,13 @@ if __name__ == "__main__":
     parser.add_argument("--hxbary",action="store_true",help="carry out Barycentric correction")
     parser.add_argument("-r","--ra",help="right ascension of barycentering correction",type=float)
     parser.add_argument("-d","--dec",help="declination of barycentering correction",type=float)
+    parser.add_argument("-v","--version",help="the pipeline is compatible with HXMTsoft version 2.04 (default), if --version 2.02 , the pipeline is compatible with HXMTsoft v2.02")
     args = parser.parse_args()
+
+    if args.version:
+        version = args.version
+    else:
+        version = 2.04
 
     if args.inputlist:
         inputfile = open(args.inputlist)
@@ -676,22 +723,22 @@ if __name__ == "__main__":
                 ra = args.ra
                 dec = args.dec
                 try:
-                    lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="HE", bary_flag=True)
-                    lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="ME", bary_flag=True)
-                    lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="LE", bary_flag=True)
+                    lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="HE", bary_flag=True, version=version)
+                    lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="ME", bary_flag=True, version=version)
+                    lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="LE", bary_flag=True, version=version)
                 except:continue
             else:
                 if args.ra or args.dec:
                     try:
-                        lines = lines + main(data_dir, product_dir,ra=ra, dec=dec, instrument="HE", bary_flag=False)
-                        lines = lines + main(data_dir, product_dir,ra=ra, dec=dec, instrument="ME", bary_flag=False)
-                        lines = lines + main(data_dir, product_dir,ra=ra, dec=dec, instrument="LE", bary_flag=False)
+                        lines = lines + main(data_dir, product_dir,ra=ra, dec=dec, instrument="HE", bary_flag=False, version=version)
+                        lines = lines + main(data_dir, product_dir,ra=ra, dec=dec, instrument="ME", bary_flag=False, version=version)
+                        lines = lines + main(data_dir, product_dir,ra=ra, dec=dec, instrument="LE", bary_flag=False, version=version)
                     except:continue
                 else:
                     try:
-                        lines = lines + main(data_dir, product_dir, instrument="HE", bary_flag=False)
-                        lines = lines + main(data_dir, product_dir, instrument="ME", bary_flag=False)
-                        lines = lines + main(data_dir, product_dir, instrument="LE", bary_flag=False)
+                        lines = lines + main(data_dir, product_dir, instrument="HE", bary_flag=False, version=version)
+                        lines = lines + main(data_dir, product_dir, instrument="ME", bary_flag=False, version=version)
+                        lines = lines + main(data_dir, product_dir, instrument="LE", bary_flag=False, version=version)
                     except:continue
         if args.bash:
             bashfile  = args.bash
@@ -722,19 +769,19 @@ if __name__ == "__main__":
         if args.hxbary:
             ra = args.ra
             dec = args.dec
-            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec,instrument="HE",bary_flag=True)
-            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec,instrument="ME",bary_flag=True)
-            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec,instrument="LE",bary_flag=True)
+            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec,instrument="HE",bary_flag=True, version=version)
+            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec,instrument="ME",bary_flag=True, version=version)
+            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec,instrument="LE",bary_flag=True, version=version)
         elif args.ra or args.dec:
             ra = args.ra
             dec = args.dec
-            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="HE",bary_flag=False)
-            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="ME",bary_flag=False)
-            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="LE",bary_flag=False)
+            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="HE",bary_flag=False, version=version)
+            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="ME",bary_flag=False, version=version)
+            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="LE",bary_flag=False, version=version)
         else:
-            lines = lines + main(data_dir, product_dir, instrument="HE", bary_flag=False)
-            lines = lines + main(data_dir, product_dir, instrument="ME", bary_flag=False)
-            lines = lines + main(data_dir, product_dir, instrument="LE", bary_flag=False)
+            lines = lines + main(data_dir, product_dir, instrument="HE", bary_flag=False, version=version)
+            lines = lines + main(data_dir, product_dir, instrument="ME", bary_flag=False, version=version)
+            lines = lines + main(data_dir, product_dir, instrument="LE", bary_flag=False, version=version)
 
         if bashfile == "":
             for i in lines:
