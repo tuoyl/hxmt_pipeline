@@ -788,15 +788,26 @@ def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91, bary_flag=False
     return pipeline_commands
 
 if __name__ == "__main__":
-    NOTICE = """
+    class bcolors:
+        HEADER = '\033[95m'
+        OKBLUE = '\033[94m'
+        OKCYAN = '\033[96m'
+        OKGREEN = '\033[92m'
+        WARNING = '\033[93m'
+        FAIL = '\033[91m'
+        ENDC = '\033[0m'
+        BOLD = '\033[1m'
+        UNDERLINE = '\033[4m'
+
+    NOTICE = f"""
+
     -------------------------------
     Notice : 
         HXMTsoft pipeline. Using this program, you can generate a shell script that 
         contains all the commands you need to complete the HXMT data processing.
 
-        !!! The software is currently used to process hxmtsoft version 2.04, 
-        if you need to process version 2.02 of hxmtsoft, use the --version parameter 
-        use -h parameter to see detail!!!
+    {bcolors.WARNING}Warning : !!! The software is currently used to process hxmtsoft version 2.04, 
+        if you need to process version 2.02 of hxmtsoft, use the --version parameter to specify the hxmtsoft version!!!{bcolors.ENDC}
     -------------------------------
 
     """
@@ -812,15 +823,18 @@ if __name__ == "__main__":
 
     # optional 
     parser.add_argument("--hxbary",action="store_true",help="carry out Barycentric correction")
-    parser.add_argument("-r","--ra",help="right ascension of barycentering correction",type=float)
-    parser.add_argument("-d","--dec",help="declination of barycentering correction",type=float)
+    parser.add_argument("-r","--ra",help="right ascension of barycentering correction (unit: degree)",type=float)
+    parser.add_argument("-d","--dec",help="declination of barycentering correction (unit: degree)",type=float)
     parser.add_argument("-v","--version",help="the pipeline is compatible with HXMTsoft version 2.04 (default), if --version 2.02 , the pipeline is compatible with HXMTsoft v2.02", type=str)
-    parser.add_argument("--LE_LC_EMIN",help="lower limits for LE lightcurve",type=float)
-    parser.add_argument("--LE_LC_EMAX",help="upper limits for LE lightcurve",type=float)
-    parser.add_argument("--ME_LC_EMIN",help="lower limits for ME lightcurve",type=float)
-    parser.add_argument("--ME_LC_EMAX",help="upper limits for ME lightcurve",type=float)
-    parser.add_argument("--HE_LC_EMIN",help="lower limits for HE lightcurve",type=float)
-    parser.add_argument("--HE_LC_EMAX",help="upper limits for HE lightcurve",type=float)
+    parser.add_argument("-LE_LC_EMIN",help="lower limits for LE lightcurve (unit: keV)",type=float)
+    parser.add_argument("-LE_LC_EMAX",help="upper limits for LE lightcurve (unit: keV)",type=float)
+    parser.add_argument("-LE_LC_BINSIZE",help="binsize LE lightcurve (unit: second)",type=float)
+    parser.add_argument("-ME_LC_EMIN",help="lower limits for ME lightcurve (unit: keV)",type=float)
+    parser.add_argument("-ME_LC_EMAX",help="upper limits for ME lightcurve (unit: keV)",type=float)
+    parser.add_argument("-ME_LC_BINSIZE",help="binsize ME lightcurve (unit: second)",type=float)
+    parser.add_argument("-HE_LC_EMIN",help="lower limits for HE lightcurve (unti: keV)",type=float)
+    parser.add_argument("-HE_LC_EMAX",help="upper limits for HE lightcurve (unti: keV)",type=float)
+    parser.add_argument("-HE_LC_BINSIZE",help="binsize HE lightcurve (unit: second)",type=float)
     args = parser.parse_args()
 
     if args.version:
