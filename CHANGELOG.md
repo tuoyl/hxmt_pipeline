@@ -1,4 +1,5 @@
 ### 1.1.1: November 03, 2020
+* New Feature: Now you can select the energy range of the Lightcurve !384ecd1cb314db2fa8aa939eecd699bbf1cfdad2
 * New Feature: Modify the pipeline compatible with both hxmtsoft v2.02 and v2.04 !dd24992da6c22189b01604b06b7832b4fd5ea91a
 
 ### 1.0.1： December 05, 2019
