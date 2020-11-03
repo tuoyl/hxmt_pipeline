@@ -12,6 +12,53 @@ import sys
 import glob
 from astropy.io import fits
 
+def energy_to_pi(energy, instrument, **kw):
+    """
+    calculate the PI channel based on EC relation
+        LE:
+        PI =  int(1536*(energy-0.1)/13);
+        ME:
+        PI = 1024*(energy-3)/60
+        HE(only available in v2.04):
+        PI=256(E-15)/370
+
+    parameters
+        energy : float
+            the energy to calculate the PI channel
+
+        instrument : string
+            the instrument to calculate the energy_to_pi
+
+    return 
+        PI : int
+            PI channel of corresponding energy
+    """
+    if energy == None:
+        return 
+
+    if instrument == "HE":
+        if kw['version'] == '2.04':
+            if (energy < 27) or (energy > 250):
+                raise IOError("The HE instrument does not produce a light curve of {} keV, \
+                        please select the energy range again.".format(energy))
+            PI = int(256*(energy-15)/370)
+        else:
+            raise IOError("HXMT version {} does not support Energy to PI for HE instrument".format(kw['version']))
+    elif instrument == "ME":
+        if (energy < 10) or (energy > 35):
+            raise IOError("The ME instrument does not produce a light curve of {} keV, \
+                    please select the energy range again.".format(energy))
+        PI = int(1024*(energy-3)/60)
+    elif instrument == "LE":
+        if (energy < 1) or (energy > 10):
+            raise IOError("The LE instrument does not produce a light curve of {} keV, \
+                    please select the energy range again.".format(energy))
+        PI =  int(1536*(energy-0.1)/13)
+
+    return PI
+
+
+
 def get_dir(product_dir, instrument="HE"):
     if instrument == "HE":
         #TODO:use os.path.join instead of '/'
@@ -290,7 +337,9 @@ def lescreen(data_dict, dir_dict):
                     pifile, gtifile, outfile, userdetid)
     return lescreen_cmd
 
-def helcgen(data_dict, dir_dict, binsize=1, minPI=25, maxPI=100):
+def helcgen(data_dict, dir_dict, binsize=1, minE=27, maxE=250, **kw):
+    minPI = energy_to_pi(minE, instrument="HE", version=kw['version'])
+    maxPI = energy_to_pi(maxE, instrument="HE", version=kw['version'])
     prefix = get_expID(data_dict)
     screenfile  = os.path.join(dir_dict["clean"], prefix+"_HE_screen.fits")
     outfile     = os.path.join(dir_dict["lightcurves"], prefix+"_HE_lc")
@@ -302,7 +351,11 @@ def helcgen(data_dict, dir_dict, binsize=1, minPI=25, maxPI=100):
                     str(binsize),str(minPI), str(maxPI))
     return helcgen_cmd
 
-def melcgen(data_dict, dir_dict, binsize=1, minPI=25, maxPI=100):
+def melcgen(data_dict, dir_dict, binsize=1, minE=10, maxE=35):
+    #NOTE:2.04 update -- energy range selection (energy to PI)
+    minPI = energy_to_pi(minE, instrument="ME")
+    maxPI = energy_to_pi(maxE, instrument="ME")
+
     prefix = get_expID(data_dict)
     screenfile  = os.path.join(dir_dict["clean"], prefix+"_ME_screen.fits")
     outfile     = os.path.join(dir_dict["lightcurves"], prefix+"_ME_lc")
@@ -314,7 +367,11 @@ def melcgen(data_dict, dir_dict, binsize=1, minPI=25, maxPI=100):
                     screenfile, outfile, deadfile, userdetid, str(binsize), str(minPI), str(maxPI))
     return melcgen_cmd
 
-def lelcgen(data_dict, dir_dict, binsize=1, minPI=25, maxPI=100):
+def lelcgen(data_dict, dir_dict, binsize=1, minE=1, maxE=10):
+    #NOTE:2.04 update -- energy range selection (energy to PI)
+    minPI = energy_to_pi(minE, instrument="LE")
+    maxPI = energy_to_pi(maxE, instrument="LE")
+
     prefix = get_expID(data_dict)
     screenfile  = os.path.join(dir_dict["clean"], prefix+"_LE_screen.fits")
     outfile     = os.path.join(dir_dict["lightcurves"], prefix+"_LE_lc")
@@ -331,9 +388,8 @@ def hespecgen(data_dict, dir_dict, **kw):
     outfile     = os.path.join(dir_dict["spectra"], prefix+"_HE_spec")
     deadfile    = data_dict["DTime"]
     if 'version' in kw:
-        print(type(kw['version']), kw['version'])
         if kw['version'] == '2.04':
-        #NOTE:2.04 update
+        #NOTE:2.04 update -- userdetid selection 
             hespecgen_cmd = 'hespecgen evtfile="%s" outfile="%s" '\
                     'deadfile="%s" userdetid='\
                     '"0-15,17" eventtype=1 starttime=0 '\
@@ -446,8 +502,18 @@ def lerspgen(data_dict, dir_dict, ra=-1, dec=-91):
     lerspgen_cmd = 'lerspgen phafile="%s" outfile="%s" attfile="%s" tempfile="%s" ra="%s" dec="%s" clobber=yes'%(phafile, outfile, attfile, tempfile, str(ra), str(dec))
     return lerspgen_cmd
 
-def hebkgmap(data_dict, dir_dict, flag='lc', minPI=25, maxPI=100):
+def hebkgmap(data_dict, dir_dict, flag='lc', minE=27, maxE=250, **kw):
     hebkgmap_cmd = []
+    #NOTE: 2.04 update -- energy to PI 
+    if kw['version'] == '2.04':
+        minPI = energy_to_pi(minE, instrument="HE", version=kw['version'])
+        maxPI = energy_to_pi(maxE, instrument="HE", version=kw['version'])
+    elif kw['version'] == '2.02':
+        minPI = 26
+        maxPI = 120 
+        print("Warning: version {} does not support Energy selection for HE instrument\
+                minPI is fixed to 26 (~= 25 keV)\
+                maxPI is fixed to 120 (~= 250 keV)".format(kw['version']))
     prefix = get_expID(data_dict)
     screenfile  = os.path.join(dir_dict["clean"], prefix+"_HE_screen.fits")
     ehkfile = data_dict["EHK"]
@@ -462,6 +528,9 @@ def hebkgmap(data_dict, dir_dict, flag='lc', minPI=25, maxPI=100):
         hebkgmap_cmd.append('hebkgmap lc %s %s %s %s %s %s %s %s'%(screenfile, ehkfile, gtifile,
                 deadfile, listfile, str(minPI), str(maxPI), outfile))
     if flag == 'spec':
+        #NOTE: spec does not selection energy range
+        minPI = 0
+        maxPI = 255
         specfile = os.path.join(dir_dict["spectra"], prefix+"_HE_spec_g*.pha")
         listfile = os.path.join(dir_dict["spectra"], prefix+"_HE_spec.txt")
         create_bkglist_cmd = "ls %s | sort -V > %s"%(specfile,listfile)
@@ -471,7 +540,11 @@ def hebkgmap(data_dict, dir_dict, flag='lc', minPI=25, maxPI=100):
                 deadfile, listfile, str(minPI), str(maxPI), outfile))
     return hebkgmap_cmd
 
-def mebkgmap(data_dict, dir_dict, flag='lc', minPI=25, maxPI=100):
+def mebkgmap(data_dict, dir_dict, flag='lc', minE=10, maxE=35, **kw):
+    #NOTE: 2.04 update -- energy selection (energy to PI)
+    minPI = energy_to_pi(minE, instrument="ME")
+    maxPI = energy_to_pi(maxE, instrument="ME")
+
     mebkgmap_cmd = []
     prefix = get_expID(data_dict)
     screenfile  = os.path.join(dir_dict["clean"], prefix+"_ME_screen.fits")
@@ -489,6 +562,9 @@ def mebkgmap(data_dict, dir_dict, flag='lc', minPI=25, maxPI=100):
         mebkgmap_cmd.append('mebkgmap lc %s %s %s %s %s %s %s %s %s %s'%(
                     screenfile, ehkfile, gtifile, deadfile, tempfile, listfile, str(minPI), str(maxPI), outfile, baddetfile))
     if flag == 'spec':
+        #NOTE: spec does not selection energy range
+        minPI = 0
+        maxPI = 1023
         specfile = os.path.join(dir_dict["spectra"], prefix+"_ME_spec_*.pha")
         listfile = os.path.join(dir_dict["spectra"], prefix+"_ME_spec.txt")
         create_bkglist_cmd = "ls %s | sort -V > %s"%(specfile,listfile)
@@ -498,7 +574,11 @@ def mebkgmap(data_dict, dir_dict, flag='lc', minPI=25, maxPI=100):
                     screenfile, ehkfile, gtifile, deadfile, tempfile, listfile, str(minPI), str(maxPI), outfile, baddetfile))
     return mebkgmap_cmd
 
-def lebkgmap(data_dict, dir_dict, flag='lc', minPI=25, maxPI=100):
+def lebkgmap(data_dict, dir_dict, flag='lc', minE=1, maxE=10):
+    #NOTE: 2.04 update -- energy selection (energy to PI)
+    minPI = energy_to_pi(minE, instrument="LE")
+    maxPI = energy_to_pi(maxE, instrument="LE")
+
     lebkgmap_cmd = []
     prefix = get_expID(data_dict)
     screenfile  = os.path.join(dir_dict["clean"], prefix+"_LE_screen.fits")
@@ -513,6 +593,9 @@ def lebkgmap(data_dict, dir_dict, flag='lc', minPI=25, maxPI=100):
         lebkgmap_cmd.append('lebkgmap lc %s %s %s %s %s %s'%(
                     screenfile, gtifile, listfile, str(minPI), str(maxPI), outfile))
     if flag == 'spec':
+        #NOTE: spec does not selection energy range
+        minPI = 0 
+        maxPI = 1535
         specfile = os.path.join(dir_dict["spectra"], prefix+"_LE_spec_*.pha")
         listfile = os.path.join(dir_dict["spectra"], prefix+"_LE_spec.txt")
         create_bkglist_cmd = "ls %s | sort -V > %s"%(specfile,listfile)
@@ -570,7 +653,7 @@ def get_expID(data_dict):
     exp_id = exp_id[0]
     return exp_id
 
-def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91, bary_flag=False, version=2.04):
+def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91, bary_flag=False, version='2.04', **kw):
     # read raw data
     rawfiles = get_rawdata(data_dir,instrument=instrument)
     outdirs  = get_dir(product_dir, instrument=instrument)
@@ -587,7 +670,16 @@ def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91, bary_flag=False
         hescreen_cmd = hescreen(rawfiles, outdirs)
         pipeline_commands.append(hescreen_cmd)
         #helcgen
-        helcgen_cmd = helcgen(rawfiles, outdirs, minPI=26, maxPI=120)
+        #NOTE:2.04 update -- LC energy range selection
+        if kw['he_lc_emin']:
+            HE_LC_EMIN = kw['he_lc_emin']
+        else:
+            HE_LC_EMIN = 27
+        if kw['he_lc_emax']:
+            HE_LC_EMAX = kw['he_lc_emax']
+        else:
+            HE_LC_EMAX = 250
+        helcgen_cmd = helcgen(rawfiles, outdirs, minE=HE_LC_EMIN, maxE=HE_LC_EMAX, version=version)
         pipeline_commands.append(helcgen_cmd)
         #hespecgen
         hespecgen_cmd = hespecgen(rawfiles, outdirs, version=version)
@@ -597,10 +689,10 @@ def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91, bary_flag=False
         # herspgen is a list
         pipeline_commands = pipeline_commands + herspgen_cmd
         #hebkgmap for spec
-        hebkgmap_cmd = hebkgmap(rawfiles, outdirs, flag="spec", minPI=0, maxPI=255)
+        hebkgmap_cmd = hebkgmap(rawfiles, outdirs, flag="spec", minE=None, maxE=None, version=version)
         pipeline_commands = pipeline_commands + hebkgmap_cmd
         #hebkgmap for lc
-        hebkgmap_cmd = hebkgmap(rawfiles, outdirs, flag="lc", minPI=26, maxPI=120)
+        hebkgmap_cmd = hebkgmap(rawfiles, outdirs, flag="lc", minE=HE_LC_EMIN, maxE=HE_LC_EMAX, version=version)
         pipeline_commands = pipeline_commands + hebkgmap_cmd
 
         if version == 2.02:
@@ -625,7 +717,16 @@ def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91, bary_flag=False
         mescreen_cmd = mescreen(rawfiles, outdirs)
         pipeline_commands.append(mescreen_cmd)
         #melcgen
-        melcgen_cmd = melcgen(rawfiles, outdirs, minPI=120, maxPI=290)
+        #NOTE:2.04 update -- LC energy range selection
+        if kw['me_lc_emin']:
+            ME_LC_EMIN = kw['me_lc_emin']
+        else:
+            ME_LC_EMIN = 10
+        if kw['me_lc_emax']:
+            ME_LC_EMAX = kw['me_lc_emax']
+        else:
+            ME_LC_EMAX = 35
+        melcgen_cmd = melcgen(rawfiles, outdirs, minE=ME_LC_EMIN, maxE=ME_LC_EMAX)
         pipeline_commands.append(melcgen_cmd)
         #mespecgen
         mespecgen_cmd = mespecgen(rawfiles, outdirs)
@@ -635,10 +736,10 @@ def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91, bary_flag=False
         # merspgen is a list
         pipeline_commands.append(merspgen_cmd)
         #mebkgmap for spec
-        mebkgmap_cmd = mebkgmap(rawfiles, outdirs, flag="spec", minPI=0, maxPI=1023)
+        mebkgmap_cmd = mebkgmap(rawfiles, outdirs, flag="spec", minE=None, maxE=None)
         pipeline_commands = pipeline_commands + mebkgmap_cmd
         #mebkgmap for lc
-        mebkgmap_cmd = mebkgmap(rawfiles, outdirs, flag="lc", minPI=120, maxPI=290)
+        mebkgmap_cmd = mebkgmap(rawfiles, outdirs, flag="lc", minE=ME_LC_EMIN, maxE=ME_LC_EMAX)
         pipeline_commands = pipeline_commands + mebkgmap_cmd
         if bary_flag:
             hxbary_cmd = hxbary(rawfiles, outdirs, ra=ra, dec=dec, instrument=instrument)
@@ -657,7 +758,16 @@ def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91, bary_flag=False
         lescreen_cmd = lescreen(rawfiles, outdirs)
         pipeline_commands.append(lescreen_cmd)
         #lelcgen
-        lelcgen_cmd = lelcgen(rawfiles, outdirs, minPI=106, maxPI=1170)
+        #NOTE:2.04 update -- LC energy range selection
+        if kw['le_lc_emin']:
+            LE_LC_EMIN = kw['le_lc_emin']
+        else:
+            LE_LC_EMIN = 1
+        if kw['le_lc_emax']:
+            LE_LC_EMAX = kw['le_lc_emax']
+        else:
+            LE_LC_EMAX = 10 
+        lelcgen_cmd = lelcgen(rawfiles, outdirs, minE=LE_LC_EMIN, maxE=LE_LC_EMAX)
         pipeline_commands.append(lelcgen_cmd)
         #lespecgen
         lespecgen_cmd = lespecgen(rawfiles, outdirs)
@@ -667,10 +777,10 @@ def main(data_dir, product_dir, instrument="HE", ra=-1, dec=-91, bary_flag=False
         # lerspgen is a list
         pipeline_commands.append(lerspgen_cmd)
         #lebkgmap for spec
-        lebkgmap_cmd = lebkgmap(rawfiles, outdirs, flag="spec", minPI=0, maxPI=1535)
+        lebkgmap_cmd = lebkgmap(rawfiles, outdirs, flag="spec", minE=None, maxE=None)
         pipeline_commands = pipeline_commands + lebkgmap_cmd
         #lebkgmap for lc
-        lebkgmap_cmd = lebkgmap(rawfiles, outdirs, flag="lc", minPI=106, maxPI=1170)
+        lebkgmap_cmd = lebkgmap(rawfiles, outdirs, flag="lc", minE=LE_LC_EMIN, maxE=LE_LC_EMAX)
         pipeline_commands = pipeline_commands + lebkgmap_cmd
         if bary_flag:
             hxbary_cmd = hxbary(rawfiles, outdirs, ra=ra, dec=dec, instrument=instrument)
@@ -699,16 +809,24 @@ if __name__ == "__main__":
     parser.add_argument("-o","--output",help="products archived path")
     parser.add_argument("-O","--outputlist",help="products archived path in list",type=str)
     parser.add_argument("-b","--bash",help="produce a bash script file",type=str)
+
+    # optional 
     parser.add_argument("--hxbary",action="store_true",help="carry out Barycentric correction")
     parser.add_argument("-r","--ra",help="right ascension of barycentering correction",type=float)
     parser.add_argument("-d","--dec",help="declination of barycentering correction",type=float)
-    parser.add_argument("-v","--version",help="the pipeline is compatible with HXMTsoft version 2.04 (default), if --version 2.02 , the pipeline is compatible with HXMTsoft v2.02")
+    parser.add_argument("-v","--version",help="the pipeline is compatible with HXMTsoft version 2.04 (default), if --version 2.02 , the pipeline is compatible with HXMTsoft v2.02", type=str)
+    parser.add_argument("--LE_LC_EMIN",help="lower limits for LE lightcurve",type=float)
+    parser.add_argument("--LE_LC_EMAX",help="upper limits for LE lightcurve",type=float)
+    parser.add_argument("--ME_LC_EMIN",help="lower limits for ME lightcurve",type=float)
+    parser.add_argument("--ME_LC_EMAX",help="upper limits for ME lightcurve",type=float)
+    parser.add_argument("--HE_LC_EMIN",help="lower limits for HE lightcurve",type=float)
+    parser.add_argument("--HE_LC_EMAX",help="upper limits for HE lightcurve",type=float)
     args = parser.parse_args()
 
     if args.version:
         version = args.version
     else:
-        version = 2.04
+        version = '2.04'
 
     if args.inputlist:
         inputfile = open(args.inputlist)
@@ -723,22 +841,49 @@ if __name__ == "__main__":
                 ra = args.ra
                 dec = args.dec
                 try:
-                    lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="HE", bary_flag=True, version=version)
-                    lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="ME", bary_flag=True, version=version)
-                    lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="LE", bary_flag=True, version=version)
+                    lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="HE", bary_flag=True, 
+                            version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
+                            me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
+                            he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
+                    lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="ME", bary_flag=True,
+                            version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
+                            me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
+                            he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
+                    lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="LE", bary_flag=True, 
+                            version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
+                            me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
+                            he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
                 except:continue
             else:
                 if args.ra or args.dec:
                     try:
-                        lines = lines + main(data_dir, product_dir,ra=ra, dec=dec, instrument="HE", bary_flag=False, version=version)
-                        lines = lines + main(data_dir, product_dir,ra=ra, dec=dec, instrument="ME", bary_flag=False, version=version)
-                        lines = lines + main(data_dir, product_dir,ra=ra, dec=dec, instrument="LE", bary_flag=False, version=version)
+                        lines = lines + main(data_dir, product_dir,ra=ra, dec=dec, instrument="HE", bary_flag=False, 
+                                version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
+                                me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
+                                he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
+                        lines = lines + main(data_dir, product_dir,ra=ra, dec=dec, instrument="ME", bary_flag=False, 
+                                version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
+                                me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
+                                he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
+                        lines = lines + main(data_dir, product_dir,ra=ra, dec=dec, instrument="LE", bary_flag=False,
+                                version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
+                                me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
+                                he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
                     except:continue
                 else:
                     try:
-                        lines = lines + main(data_dir, product_dir, instrument="HE", bary_flag=False, version=version)
-                        lines = lines + main(data_dir, product_dir, instrument="ME", bary_flag=False, version=version)
-                        lines = lines + main(data_dir, product_dir, instrument="LE", bary_flag=False, version=version)
+                        lines = lines + main(data_dir, product_dir, instrument="HE", bary_flag=False, 
+                                version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
+                                me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
+                                he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
+                        lines = lines + main(data_dir, product_dir, instrument="ME", bary_flag=False, 
+                                version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
+                                me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
+                                he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
+                        lines = lines + main(data_dir, product_dir, instrument="LE", bary_flag=False,
+                                version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
+                                me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
+                                he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
                     except:continue
         if args.bash:
             bashfile  = args.bash
@@ -769,19 +914,46 @@ if __name__ == "__main__":
         if args.hxbary:
             ra = args.ra
             dec = args.dec
-            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec,instrument="HE",bary_flag=True, version=version)
-            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec,instrument="ME",bary_flag=True, version=version)
-            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec,instrument="LE",bary_flag=True, version=version)
+            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec,instrument="HE",bary_flag=True, 
+                    version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
+                    me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
+                    he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
+            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec,instrument="ME",bary_flag=True, 
+                    version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
+                    me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
+                    he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
+            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec,instrument="LE",bary_flag=True,
+                    version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
+                    me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
+                    he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
         elif args.ra or args.dec:
             ra = args.ra
             dec = args.dec
-            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="HE",bary_flag=False, version=version)
-            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="ME",bary_flag=False, version=version)
-            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="LE",bary_flag=False, version=version)
+            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="HE",bary_flag=False, 
+                    version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
+                    me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
+                    he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
+            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="ME",bary_flag=False,
+                    version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
+                    me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
+                    he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
+            lines = lines + main(data_dir, product_dir, ra=ra, dec=dec, instrument="LE",bary_flag=False, 
+                    version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
+                    me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
+                    he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
         else:
-            lines = lines + main(data_dir, product_dir, instrument="HE", bary_flag=False, version=version)
-            lines = lines + main(data_dir, product_dir, instrument="ME", bary_flag=False, version=version)
-            lines = lines + main(data_dir, product_dir, instrument="LE", bary_flag=False, version=version)
+            lines = lines + main(data_dir, product_dir, instrument="HE", bary_flag=False, 
+                    version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
+                    me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
+                    he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
+            lines = lines + main(data_dir, product_dir, instrument="ME", bary_flag=False,
+                    version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
+                    me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
+                    he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
+            lines = lines + main(data_dir, product_dir, instrument="LE", bary_flag=False, 
+                    version=version, le_lc_emin=args.LE_LC_EMIN, le_lc_emax=args.LE_LC_EMAX, 
+                    me_lc_emin=args.ME_LC_EMIN, me_lc_emax=args.ME_LC_EMAX,
+                    he_lc_emin=args.HE_LC_EMIN, he_lc_emax=args.HE_LC_EMAX)
 
         if bashfile == "":
             for i in lines:
