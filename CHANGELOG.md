@@ -1,3 +1,6 @@
+### 1.1.1: November 03, 2020
+* New Feature: Modify the pipeline compatible with both hxmtsoft v2.02 and v2.04 !eeb5e3b261bf0a43cf07a97624a0b5e81ff7e499
+
 ### 1.0.1： December 05, 2019
 * lerspgen: modify the input method !6623bb030b9f3a8292068da3762940dd0d0c088f
 * merspgen: modify the input method !6623bb030b9f3a8292068da3762940dd0d0c088f
