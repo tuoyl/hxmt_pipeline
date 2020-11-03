@@ -1,5 +1,8 @@
 # hxmt_pipeline
 
+> **_NOTE:_**  该 pipeline 目前默认适用于 HXMTsoft v2.04 版本，如果你需要将该 pipeline 运用于 v2.02 版本，
+	请使用 --version 参数进行设置。
+
 ## 概览
 
 HXMT 批处理Python程序。使用该程序，你可以产生一个shell脚本，该脚本中包含了完成HXMT数据处理所需要的所有命令。
@@ -25,9 +28,9 @@ usage: hpipeline.py [-h] [-i INPUT] [-I INPUTLIST] [-o OUTPUT] [-O OUTPUTLIST]
         HXMTsoft pipeline. Using this program, you can generate a shell script that
         contains all the commands you need to complete the HXMT data processing.
 
-	<span style="color: green"> !!! The software is currently used to process hxmtsoft version 2.04,
+	!!! The software is currently used to process hxmtsoft version 2.04,
         if you need to process version 2.02 of hxmtsoft, use the --version parameter
-        use -h parameter to see detail!!! </span>
+        use -h parameter to see detail!!!
     -------------------------------
 
     Example: hpipeline -i /DATA_PATH/ExpID/ -o /OUTPUT_PATH/ --hxbary -r 83.63322083 -d 22.014461 -b bash-script-name.sh
